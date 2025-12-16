@@ -9,6 +9,7 @@ import EmployeeFilters from '../components/employees/EmployeeFilters';
 import EmployeeCard from '../components/employees/EmployeeCard';
 import EmployeeStats from '../components/employees/EmployeeStats';
 import SyncResultModal from '../components/employees/SyncResultModal';
+import EmployeeDetailsModal from '../components/employees/EmployeeDetailsModal';
 import { useRouter } from 'next/navigation';
 import { Employee } from '../types/employee';
 
@@ -22,6 +23,8 @@ export default function EmployeesPage() {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncResult, setSyncResult] = useState<any>(null);
   const [syncError, setSyncError] = useState<Error | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedEmployeeDetails, setSelectedEmployeeDetails] = useState<Employee | null>(null);
 
   const handleSync = async () => {
     try {
@@ -56,6 +59,16 @@ export default function EmployeesPage() {
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleViewDetails = (employee: Employee) => {
+    setSelectedEmployeeDetails(employee);
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedEmployeeDetails(null);
   };
 
   return (
@@ -140,6 +153,7 @@ export default function EmployeesPage() {
                     onSelect={setSelectedEmployee}
                     showActions
                     onDeactivate={handleDeactivate}
+                    onViewDetails={handleViewDetails}
                   />
                 ))}
               </div>
@@ -190,6 +204,13 @@ export default function EmployeesPage() {
             result={syncResult}
             error={syncError}
             isLoading={syncMutation.isPending}
+          />
+
+          {/* Modal de détails de l'employé */}
+          <EmployeeDetailsModal
+            isOpen={showDetailsModal}
+            onClose={handleCloseDetailsModal}
+            employee={selectedEmployeeDetails}
           />
         </div>
       </div>
