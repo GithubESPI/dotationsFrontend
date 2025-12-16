@@ -11,9 +11,9 @@ export default function LoginPage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    // Si déjà authentifié, rediriger vers la page d'accueil
+    // Si déjà authentifié, rediriger vers le dashboard
     if (isAuthenticated && !isLoading) {
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [isAuthenticated, isLoading, router]);
 

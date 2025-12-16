@@ -28,8 +28,10 @@ function CallbackContent() {
         throw new Error(decodeURIComponent(errorParam));
       }
 
-      // Récupérer le token depuis l'URL
+      // Récupérer le token JWT depuis l'URL
       const token = searchParams.get('token');
+      // Récupérer le token Azure AD depuis l'URL (si fourni par le backend)
+      const azureToken = searchParams.get('azure_token');
       
       if (!token) {
         // Essayer de récupérer depuis le hash de l'URL (si le backend l'envoie ainsi)
@@ -37,11 +39,12 @@ function CallbackContent() {
           const hash = window.location.hash.substring(1);
           const params = new URLSearchParams(hash);
           const hashToken = params.get('token');
+          const hashAzureToken = params.get('azure_token');
           
           if (hashToken) {
-            await authService.handleCallback(hashToken);
+            await authService.handleCallback(hashToken, hashAzureToken || undefined);
             await refreshUser();
-            router.push('/');
+            router.push('/dashboard');
             return;
           }
         }
@@ -49,12 +52,12 @@ function CallbackContent() {
         throw new Error('Token manquant dans l\'URL. L\'authentification a peut-être échoué.');
       }
 
-      // Traiter le callback avec le token
-      await authService.handleCallback(token);
+      // Traiter le callback avec les tokens
+      await authService.handleCallback(token, azureToken || undefined);
       await refreshUser();
       
-      // Rediriger vers la page d'accueil
-      router.push('/');
+      // Rediriger vers le dashboard
+      router.push('/dashboard');
     } catch (err: any) {
       console.error('Erreur lors du callback:', err);
       setError(err.message || 'Erreur lors de l\'authentification');

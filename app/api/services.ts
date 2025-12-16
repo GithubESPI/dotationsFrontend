@@ -32,6 +32,10 @@ export const authApi = {
    * Récupérer le profil depuis Microsoft Graph
    */
   getGraphProfile: async (token?: string) => {
+    // Si pas de token fourni, essayer de le récupérer depuis localStorage
+    if (!token && typeof window !== 'undefined') {
+      token = localStorage.getItem('azure_access_token') || undefined;
+    }
     const params = token ? { token } : {};
     const response = await axiosInstance.get('/auth/graph/profile', { params });
     return response.data;
@@ -41,6 +45,10 @@ export const authApi = {
    * Récupérer la photo depuis Microsoft Graph
    */
   getGraphPhoto: async (token?: string) => {
+    // Si pas de token fourni, essayer de le récupérer depuis localStorage
+    if (!token && typeof window !== 'undefined') {
+      token = localStorage.getItem('azure_access_token') || undefined;
+    }
     const params = token ? { token } : {};
     const response = await axiosInstance.get('/auth/graph/photo', { params });
     return response.data;
@@ -50,6 +58,10 @@ export const authApi = {
    * Récupérer les groupes depuis Microsoft Graph
    */
   getGraphGroups: async (token?: string) => {
+    // Si pas de token fourni, essayer de le récupérer depuis localStorage
+    if (!token && typeof window !== 'undefined') {
+      token = localStorage.getItem('azure_access_token') || undefined;
+    }
     const params = token ? { token } : {};
     const response = await axiosInstance.get('/auth/graph/groups', { params });
     return response.data;

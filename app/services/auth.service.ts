@@ -32,12 +32,13 @@ class AuthService {
    * Extraire le token depuis l'URL après redirection depuis le backend
    * Le backend callback redirige vers le frontend avec le token
    */
-  async handleCallback(token?: string): Promise<AuthResponse | null> {
+  async handleCallback(token?: string, azureToken?: string): Promise<AuthResponse | null> {
     if (!token) {
       // Essayer de récupérer depuis l'URL
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         token = urlParams.get('token') || undefined;
+        azureToken = azureToken || urlParams.get('azure_token') || undefined;
       }
     }
 
@@ -46,8 +47,13 @@ class AuthService {
     }
 
     try {
-      // Stocker le token
+      // Stocker le token JWT
       localStorage.setItem('access_token', token);
+      
+      // Stocker le token Azure AD si fourni
+      if (azureToken) {
+        localStorage.setItem('azure_access_token', azureToken);
+      }
       
       // Récupérer le profil utilisateur
       const profile = await this.getProfile();
@@ -57,6 +63,7 @@ class AuthService {
 
       return {
         access_token: token,
+        azure_access_token: azureToken,
         user: profile,
       };
     } catch (error: any) {

@@ -37,8 +37,8 @@ axiosInstance.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Si l'erreur est 401 (non autorisé) et qu'on n'a pas déjà tenté de rafraîchir
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Si l'erreur est 401 (non autorisé) ou 403 (interdit) et qu'on n'a pas déjà tenté de rafraîchir
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
       originalRequest._retry = true;
 
       // Supprimer le token invalide
