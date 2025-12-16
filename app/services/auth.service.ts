@@ -22,6 +22,9 @@ class AuthService {
   redirectToLogin(): void {
     if (typeof window === 'undefined') return;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    
+    // Rediriger vers l'endpoint d'authentification du backend
+    // Le backend doit être démarré sur le port 3000
     window.location.href = `${apiUrl}/auth/azure-ad`;
   }
 

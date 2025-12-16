@@ -22,6 +22,12 @@ function CallbackContent() {
       setIsProcessing(true);
       setError(null);
 
+      // Vérifier s'il y a une erreur dans l'URL (venant du backend)
+      const errorParam = searchParams.get('error');
+      if (errorParam) {
+        throw new Error(decodeURIComponent(errorParam));
+      }
+
       // Récupérer le token depuis l'URL
       const token = searchParams.get('token');
       
@@ -40,7 +46,7 @@ function CallbackContent() {
           }
         }
         
-        throw new Error('Token manquant dans l\'URL');
+        throw new Error('Token manquant dans l\'URL. L\'authentification a peut-être échoué.');
       }
 
       // Traiter le callback avec le token
