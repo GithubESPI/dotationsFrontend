@@ -5,7 +5,7 @@ interface ModalProps {
   isOpen: boolean;
   onClose?: () => void;
   children: React.ReactNode;
-  title?: string;
+  title?: string | React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showCloseButton?: boolean;
 }
@@ -51,7 +51,7 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
       onClick={(e) => {
         // Fermer si on clique sur le backdrop
         if (e.target === e.currentTarget && onClose) {
@@ -67,22 +67,24 @@ const Modal: React.FC<ModalProps> = ({
 
       {/* Modal */}
       <div
-        className={`relative w-full ${sizeClasses[size]} transform transition-all duration-300 scale-100 opacity-100`}
+        className={`relative w-full ${sizeClasses[size]} max-h-[95vh] sm:max-h-[90vh] transform transition-all duration-300 scale-100 opacity-100 flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative rounded-3xl bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+        <div className="relative rounded-2xl sm:rounded-3xl bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col h-full max-h-[95vh] sm:max-h-[90vh]">
           {/* Header */}
           {title && (
-            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-black dark:text-zinc-50">{title}</h2>
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-2 flex-shrink-0 bg-white dark:bg-zinc-900">
+              <h2 className="text-base sm:text-xl font-semibold text-black dark:text-zinc-50 flex-1 min-w-0 truncate pr-2">
+                {typeof title === 'string' ? title : title}
+              </h2>
               {showCloseButton && onClose && (
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="p-1.5 sm:p-2 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex-shrink-0"
                   aria-label="Fermer"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-4 h-4 sm:w-5 sm:h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -99,8 +101,12 @@ const Modal: React.FC<ModalProps> = ({
             </div>
           )}
 
-          {/* Content */}
-          <div className="p-6">{children}</div>
+          {/* Content - Scrollable */}
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0" style={{ maxHeight: title ? 'calc(95vh - 120px)' : 'calc(95vh - 40px)' }}>
+            <div className="min-h-full">
+              {children}
+            </div>
+          </div>
         </div>
       </div>
     </div>

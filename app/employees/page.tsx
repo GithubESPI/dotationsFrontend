@@ -10,6 +10,8 @@ import EmployeeCard from '../components/employees/EmployeeCard';
 import EmployeeStats from '../components/employees/EmployeeStats';
 import SyncResultModal from '../components/employees/SyncResultModal';
 import EmployeeDetailsModal from '../components/employees/EmployeeDetailsModal';
+import AllocationFormModal from '../components/allocations/AllocationFormModal';
+import { useAllocationFormStore } from '../stores/allocationFormStore';
 import { useRouter } from 'next/navigation';
 import { Employee } from '../types/employee';
 
@@ -69,6 +71,12 @@ export default function EmployeesPage() {
   const handleCloseDetailsModal = () => {
     setShowDetailsModal(false);
     setSelectedEmployeeDetails(null);
+  };
+
+  const { openModal: openAllocationModal } = useAllocationFormStore();
+
+  const handleAllocateEquipment = (employee: Employee) => {
+    openAllocationModal(employee);
   };
 
   return (
@@ -154,6 +162,7 @@ export default function EmployeesPage() {
                     showActions
                     onDeactivate={handleDeactivate}
                     onViewDetails={handleViewDetails}
+                    onAllocateEquipment={handleAllocateEquipment}
                   />
                 ))}
               </div>
@@ -212,6 +221,9 @@ export default function EmployeesPage() {
             onClose={handleCloseDetailsModal}
             employee={selectedEmployeeDetails}
           />
+
+          {/* Modal de formulaire d'allocation */}
+          <AllocationFormModal />
         </div>
       </div>
     </ProtectedRoute>

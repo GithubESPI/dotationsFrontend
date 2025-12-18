@@ -125,7 +125,10 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
                     target.style.display = 'none';
                     const parent = target.parentElement;
                     if (parent) {
-                      parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-2xl font-bold">${getInitials(employee.displayName)}</div>`;
+                      const fallbackDiv = document.createElement('div');
+                      fallbackDiv.className = 'w-full h-full flex items-center justify-center text-white text-2xl font-bold';
+                      fallbackDiv.textContent = getInitials(employee.displayName);
+                      parent.appendChild(fallbackDiv);
                     }
                   }}
                 />
@@ -347,7 +350,7 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
                           {key}
                         </p>
                         <p className="text-sm text-black dark:text-zinc-50 break-words">
-                          {value}
+                          {value as string}
                         </p>
                       </div>
                     </div>

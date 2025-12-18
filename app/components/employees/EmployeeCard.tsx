@@ -1,6 +1,5 @@
 'use client';
 import React from 'react';
-import MagicContainer from '../MagicContainer';
 import { Employee } from '../../types/employee';
 
 interface EmployeeCardProps {
@@ -9,6 +8,7 @@ interface EmployeeCardProps {
   showActions?: boolean;
   onDeactivate?: (id: string) => void;
   onViewDetails?: (employee: Employee) => void;
+  onAllocateEquipment?: (employee: Employee) => void;
 }
 
 const EmployeeCard: React.FC<EmployeeCardProps> = ({
@@ -17,6 +17,7 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
   showActions = false,
   onDeactivate,
   onViewDetails,
+  onAllocateEquipment,
 }) => {
   // Générer des initiales
   const getInitials = (name: string): string => {
@@ -60,13 +61,12 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
   };
 
   return (
-    <MagicContainer>
-      <div
-        className={`w-full rounded-[23px] bg-white dark:bg-zinc-900 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] ${
-          onSelect ? 'cursor-pointer' : ''
-        } ${!employee.isActive ? 'opacity-60' : ''}`}
-        onClick={() => onSelect?.(employee)}
-      >
+    <div
+      className={`w-full rounded-[23px] bg-white dark:bg-zinc-900 shadow-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-zinc-300 dark:hover:border-zinc-700 ${
+        onSelect ? 'cursor-pointer' : ''
+      } ${!employee.isActive ? 'opacity-60' : ''}`}
+      onClick={() => onSelect?.(employee)}
+    >
         {/* Image de couverture avec dégradé */}
         <div className={`relative h-32 bg-gradient-to-br ${getGradientColor(employee.displayName)}`}>
           {/* Badge de statut en haut à droite */}
@@ -106,7 +106,10 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
                       target.style.display = 'none';
                       const parent = target.parentElement;
                       if (parent) {
-                        parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white text-2xl font-bold">${getInitials(employee.displayName)}</div>`;
+                        const fallbackDiv = document.createElement('div');
+                        fallbackDiv.className = 'w-full h-full flex items-center justify-center text-white text-2xl font-bold';
+                        fallbackDiv.textContent = getInitials(employee.displayName);
+                        parent.appendChild(fallbackDiv);
                       }
                     }}
                   />
@@ -213,6 +216,30 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
 
             {/* Actions */}
             <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-700 space-y-2">
+              {onAllocateEquipment && employee.isActive && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAllocateEquipment(employee);
+                  }}
+                  className="w-full px-4 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium transition-all duration-200 hover:shadow-lg text-sm flex items-center justify-center gap-2"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  Affecter du matériel
+                </button>
+              )}
               {onViewDetails && (
                 <button
                   onClick={(e) => {
@@ -239,7 +266,6 @@ const EmployeeCard: React.FC<EmployeeCardProps> = ({
           </div>
         </div>
       </div>
-    </MagicContainer>
   );
 };
 
