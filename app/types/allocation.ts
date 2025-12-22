@@ -13,13 +13,25 @@ export type AllocationStatus = z.infer<typeof AllocationStatusSchema>;
 
 // Schéma pour un équipement dans une allocation
 export const EquipmentItemSchema = z.object({
-  equipmentId: z.string(),
+  equipmentId: z.string().optional(), // Optionnel car peut venir de Jira sans être dans MongoDB
   internalId: z.string().optional(),
   type: z.string().optional(),
-  serialNumber: z.string().optional(),
+  brand: z.string().optional(), // Marque de l'équipement
+  model: z.string().optional(), // Modèle de l'équipement
+  serialNumber: z.string().optional(), // Optionnel si equipmentId est présent
+  jiraAssetId: z.string().optional(), // ID de l'asset Jira si sélectionné depuis Jira
   deliveredDate: z.string().optional(),
   condition: z.string().optional().default('bon_etat'),
-});
+}).refine(
+  (data) => {
+    // Au moins un des deux doit être présent
+    return !!(data.equipmentId || (data.serialNumber && data.serialNumber.trim().length > 0));
+  },
+  {
+    message: 'Vous devez sélectionner un équipement depuis Jira ou dans le système',
+    path: ['equipmentId'],
+  }
+);
 
 export type EquipmentItem = z.infer<typeof EquipmentItemSchema>;
 

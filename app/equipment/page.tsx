@@ -1,0 +1,203 @@
+'use client';
+
+import { useState } from 'react';
+import { ProtectedRoute } from '../components/ProtectedRoute';
+import { useEquipmentSearch } from '../hooks/useEquipment';
+import { useEquipmentSearchStore } from '../stores/equipmentSearchStore';
+import EquipmentFormModal from '../components/equipment/EquipmentFormModal';
+import { Equipment } from '../types/equipment';
+
+export default function EquipmentPage() {
+  const { searchParams, setPage } = useEquipmentSearchStore();
+  const { data, isLoading, error, refetch } = useEquipmentSearch(searchParams);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+
+  const handleCreateEquipment = () => {
+    setSelectedEquipment(null);
+    setShowFormModal(true);
+  };
+
+  const handleEditEquipment = (equipment: Equipment) => {
+    setSelectedEquipment(equipment);
+    setShowFormModal(true);
+  };
+
+  const handleCloseFormModal = () => {
+    setShowFormModal(false);
+    setSelectedEquipment(null);
+  };
+
+  const handleFormSuccess = () => {
+    refetch();
+    handleCloseFormModal();
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-black dark:via-zinc-900 dark:to-black">
+        <div className="container mx-auto px-4 py-8 md:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-black dark:text-zinc-50 mb-2">
+                Gestion des Équipements
+              </h1>
+              <p className="text-zinc-600 dark:text-zinc-400">
+                Gérez les équipements et synchronisez depuis Jira Asset
+              </p>
+            </div>
+            <button
+              onClick={handleCreateEquipment}
+              className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg"
+            >
+              + Créer un équipement
+            </button>
+          </div>
+
+          {/* Résultats */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
+                <div className="text-lg text-zinc-600 dark:text-zinc-400">
+                  Chargement des équipements...
+                </div>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <div className="mb-4 text-4xl">⚠️</div>
+                <h2 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">
+                  Erreur de chargement
+                </h2>
+                <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+                  {error instanceof Error ? error.message : 'Une erreur est survenue'}
+                </p>
+                <button
+                  onClick={() => refetch()}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  Réessayer
+                </button>
+              </div>
+            </div>
+          ) : data && data.data.length > 0 ? (
+            <>
+              <div className="mb-6 text-sm text-zinc-600 dark:text-zinc-400">
+                {data.pagination.total} équipement{data.pagination.total > 1 ? 's' : ''} trouvé
+                {data.pagination.total > 1 ? 's' : ''}
+              </div>
+
+              {/* Liste des équipements */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {data.data.map((equipment) => (
+                  <div
+                    key={equipment._id}
+                    className="p-6 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:shadow-lg transition-all cursor-pointer"
+                    onClick={() => handleEditEquipment(equipment)}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-black dark:text-zinc-50">
+                          {equipment.brand} {equipment.model}
+                        </h3>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">
+                          {equipment.serialNumber}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          equipment.status === 'DISPONIBLE'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : equipment.status === 'AFFECTE'
+                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300'
+                        }`}
+                      >
+                        {equipment.status}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                        <span className="font-medium">Type:</span>
+                        <span>{equipment.type}</span>
+                      </div>
+                      {equipment.internalId && (
+                        <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                          <span className="font-medium">ID interne:</span>
+                          <span>{equipment.internalId}</span>
+                        </div>
+                      )}
+                      {equipment.jiraAssetId && (
+                        <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-500">
+                          <span>🔗 Jira: {equipment.jiraAssetId}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {data.pagination.totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <button
+                    onClick={() => handlePageChange(searchParams.page - 1)}
+                    disabled={searchParams.page === 1}
+                    className="px-4 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-black dark:text-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Précédent
+                  </button>
+                  <div className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium">
+                    Page {searchParams.page} sur {data.pagination.totalPages}
+                  </div>
+                  <button
+                    onClick={() => handlePageChange(searchParams.page + 1)}
+                    disabled={searchParams.page >= data.pagination.totalPages}
+                    className="px-4 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-black dark:text-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Suivant
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <div className="mb-4 text-4xl">📦</div>
+                <h2 className="text-xl font-semibold text-zinc-600 dark:text-zinc-400 mb-2">
+                  Aucun équipement trouvé
+                </h2>
+                <p className="text-zinc-500 dark:text-zinc-500 mb-4">
+                  Créez votre premier équipement ou synchronisez depuis Jira
+                </p>
+                <button
+                  onClick={handleCreateEquipment}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                >
+                  Créer un équipement
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Modal de formulaire */}
+          <EquipmentFormModal
+            isOpen={showFormModal}
+            onClose={handleCloseFormModal}
+            equipmentId={selectedEquipment?._id}
+            onSuccess={handleFormSuccess}
+          />
+        </div>
+      </div>
+    </ProtectedRoute>
+  );
+}
+
