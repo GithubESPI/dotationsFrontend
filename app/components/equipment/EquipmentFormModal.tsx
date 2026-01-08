@@ -114,7 +114,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
   // Mapper le type depuis Jira vers notre enum
   const mapJiraTypeToEquipmentType = (jiraType?: string): string => {
     if (!jiraType) return 'PC_PORTABLE';
-    
+
     const lowerType = jiraType.toLowerCase();
     if (lowerType.includes('laptop') || lowerType.includes('portable')) return 'PC_PORTABLE';
     if (lowerType.includes('desktop') || lowerType.includes('fixe')) return 'PC_FIXE';
@@ -128,7 +128,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
   // Mapper le statut depuis Jira vers notre enum
   const mapJiraStatusToEquipmentStatus = (jiraStatus?: string): string => {
     if (!jiraStatus) return 'DISPONIBLE';
-    
+
     const lowerStatus = jiraStatus.toLowerCase();
     if (lowerStatus.includes('disponible') || lowerStatus.includes('available')) return 'DISPONIBLE';
     if (lowerStatus.includes('affecté') || lowerStatus.includes('assigned')) return 'AFFECTE';
@@ -141,7 +141,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
 
   const handleJiraAssetSelect = async (asset: JiraAssetObject, formData: any) => {
     setSelectedJiraAsset(asset);
-    
+
     // Remplir automatiquement les champs du formulaire
     if (formData.serialNumber) {
       setValue('serialNumber', formData.serialNumber, { shouldValidate: true });
@@ -163,7 +163,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
       const mappedStatus = mapJiraStatusToEquipmentStatus(formData.status);
       setValue('status', mappedStatus as any, { shouldValidate: true });
     }
-    
+
     // Toujours définir le jiraAssetId
     setValue('jiraAssetId', asset.id);
   };
@@ -175,7 +175,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
       } else {
         await createEquipment.mutateAsync(data);
       }
-      
+
       onSuccess?.();
       onClose();
     } catch (error: any) {
@@ -260,186 +260,187 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
             </div>
           )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Type d'équipement */}
-          <div>
-            <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-              Type d'équipement <span className="text-red-500">*</span>
-            </label>
-            <select
-              {...register('type')}
-              className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            >
-              {Object.entries(equipmentTypeLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            {errors.type && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.type.message}</p>
-            )}
-          </div>
-
-          {/* Statut */}
-          <div>
-            <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-              Statut
-            </label>
-            <select
-              {...register('status')}
-              className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            >
-              {Object.entries(equipmentStatusLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Marque */}
-          <div>
-            <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-              Marque <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              {...register('brand')}
-              placeholder="Ex: Dell, HP, Lenovo..."
-              className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-            {errors.brand && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.brand.message}</p>
-            )}
-          </div>
-
-          {/* Modèle */}
-          <div>
-            <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-              Modèle <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              {...register('model')}
-              placeholder="Ex: Latitude 5520, ThinkPad X1..."
-              className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-            {errors.model && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.model.message}</p>
-            )}
-          </div>
-
-          {/* Numéro de série */}
-          <div>
-            <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-              Numéro de série <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              {...register('serialNumber')}
-              placeholder="Ex: SN123456789"
-              className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono"
-            />
-            {errors.serialNumber && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                {errors.serialNumber.message}
-              </p>
-            )}
-          </div>
-
-          {/* ID interne */}
-          <div>
-            <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-              ID interne
-            </label>
-            <input
-              type="text"
-              {...register('internalId')}
-              placeholder="Ex: PI-1234"
-              className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-          </div>
-
-          {/* IMEI (pour mobile/tablette) */}
-          <div>
-            <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-              IMEI
-            </label>
-            <input
-              type="text"
-              {...register('imei')}
-              placeholder="Pour mobile/tablette"
-              className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono"
-            />
-          </div>
-
-          {/* Ligne téléphonique */}
-          <div>
-            <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-              Ligne téléphonique
-            </label>
-            <input
-              type="text"
-              {...register('phoneLine')}
-              placeholder="Pour téléphone IP"
-              className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Localisation */}
-          <div>
-            <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
-              Localisation
-            </label>
-            <input
-              type="text"
-              {...register('location')}
-              placeholder="Ex: Bureau Paris, Site Lyon..."
-              className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Informations pré-remplies depuis Jira */}
-        {selectedJiraAsset && (watchedBrand || watchedModel || watchedSerialNumber) && (
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
-              📋 Informations pré-remplies depuis Jira
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-sm text-blue-800 dark:text-blue-200">
-              {watchedBrand && <div>Marque: <strong>{watchedBrand}</strong></div>}
-              {watchedModel && <div>Modèle: <strong>{watchedModel}</strong></div>}
-              {watchedSerialNumber && <div>N° série: <strong>{watchedSerialNumber}</strong></div>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Type d'équipement */}
+            <div>
+              <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                Type d'équipement <span className="text-red-500">*</span>
+              </label>
+              <select
+                {...register('type')}
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                {Object.entries(equipmentTypeLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              {errors.type && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.type.message}</p>
+              )}
             </div>
-            <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">
-              Vous pouvez modifier ces valeurs si nécessaire
-            </p>
-          </div>
-        )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-black dark:text-zinc-50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-          >
-            Annuler
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting || createEquipment.isPending || updateEquipment.isPending}
-            className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting || createEquipment.isPending || updateEquipment.isPending
-              ? 'Enregistrement...'
-              : equipmentId
-              ? 'Modifier'
-              : 'Créer'}
-          </button>
-        </div>
-      </form>
+            {/* Statut */}
+            <div>
+              <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                Statut
+              </label>
+              <select
+                {...register('status')}
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                {Object.entries(equipmentStatusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Marque */}
+            <div>
+              <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                Marque <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                {...register('brand')}
+                placeholder="Ex: Dell, HP, Lenovo..."
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              />
+              {errors.brand && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.brand.message}</p>
+              )}
+            </div>
+
+            {/* Modèle */}
+            <div>
+              <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                Modèle <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                {...register('model')}
+                placeholder="Ex: Latitude 5520, ThinkPad X1..."
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              />
+              {errors.model && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.model.message}</p>
+              )}
+            </div>
+
+            {/* Numéro de série */}
+            <div>
+              <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                Numéro de série <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                {...register('serialNumber')}
+                placeholder="Ex: SN123456789"
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono"
+              />
+              {errors.serialNumber && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {errors.serialNumber.message}
+                </p>
+              )}
+            </div>
+
+            {/* ID interne */}
+            <div>
+              <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                ID interne
+              </label>
+              <input
+                type="text"
+                {...register('internalId')}
+                placeholder="Ex: PI-1234"
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              />
+            </div>
+
+            {/* IMEI (pour mobile/tablette) */}
+            <div>
+              <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                IMEI
+              </label>
+              <input
+                type="text"
+                {...register('imei')}
+                placeholder="Pour mobile/tablette"
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono"
+              />
+            </div>
+
+            {/* Ligne téléphonique */}
+            <div>
+              <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                Ligne téléphonique
+              </label>
+              <input
+                type="text"
+                {...register('phoneLine')}
+                placeholder="Pour téléphone IP"
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              />
+            </div>
+
+            {/* Localisation */}
+            <div>
+              <label className="block text-sm font-medium text-black dark:text-zinc-50 mb-2">
+                Localisation
+              </label>
+              <input
+                type="text"
+                {...register('location')}
+                placeholder="Ex: Bureau Paris, Site Lyon..."
+                className="w-full px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-black dark:text-zinc-50 placeholder-zinc-500 dark:placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Informations pré-remplies depuis Jira */}
+          {selectedJiraAsset && (watchedBrand || watchedModel || watchedSerialNumber) && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
+                📋 Informations pré-remplies depuis Jira
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-sm text-blue-800 dark:text-blue-200">
+                {watchedBrand && <div>Marque: <strong>{watchedBrand}</strong></div>}
+                {watchedModel && <div>Modèle: <strong>{watchedModel}</strong></div>}
+                {watchedSerialNumber && <div>N° série: <strong>{watchedSerialNumber}</strong></div>}
+              </div>
+              <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">
+                Vous pouvez modifier ces valeurs si nécessaire
+              </p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 text-black dark:text-zinc-50 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || createEquipment.isPending || updateEquipment.isPending}
+              className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting || createEquipment.isPending || updateEquipment.isPending
+                ? 'Enregistrement...'
+                : equipmentId
+                  ? 'Modifier'
+                  : 'Créer'}
+            </button>
+          </div>
+        </form>
+      )}
     </Modal>
   );
 };

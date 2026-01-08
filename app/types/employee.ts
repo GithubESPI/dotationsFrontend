@@ -39,7 +39,7 @@ export const EmployeeSchema = z.object({
     costCenter: z.string().optional(),
     division: z.string().optional(),
   }).optional(),
-  onPremisesExtensionAttributes: z.record(z.string().optional()).optional(),
+  onPremisesExtensionAttributes: z.record(z.string(), z.string().optional()).optional(),
   profilePicture: z.string().optional(),
   profilePictureUrl: z.string().optional(),
   isActive: z.boolean(),
@@ -97,5 +97,15 @@ export const SyncResponseSchema = z.object({
   skipped: z.number(),
 });
 
+
 export type SyncResponse = z.infer<typeof SyncResponseSchema>;
+
+// Schéma pour la synchronisation des photos
+export const SyncPhotosResponseSchema = z.object({
+  updated: z.number(),
+  errors: z.number(),
+  skipped: z.number(),
+});
+
+export type SyncPhotosResponse = z.infer<typeof SyncPhotosResponseSchema>;
 

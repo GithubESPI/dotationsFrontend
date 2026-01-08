@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useRouter } from 'next/navigation';
@@ -9,6 +10,9 @@ import StatCard from '../components/dashboard/StatCard';
 import QuickActions from '../components/dashboard/QuickActions';
 import ActivityFeed from '../components/dashboard/ActivityFeed';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSyncLaptops } from '../hooks/useJiraAsset';
+import SyncResultModal from '../components/equipment/SyncResultModal';
+import { SyncResponse } from '../types/jira-asset';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -16,6 +20,12 @@ export default function DashboardPage() {
   const { data: user, isLoading: userLoading, error: userError } = useUser();
   const { data: groups, error: groupsError } = useUserGroups();
   const queryClient = useQueryClient();
+
+  // États pour la synchronisation Jira
+  const syncMutation = useSyncLaptops();
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncResult, setSyncResult] = useState<SyncResponse | null>(null);
+  const [syncError, setSyncError] = useState<Error | null>(null);
 
   const handleLogout = async () => {
     await logout();
@@ -25,6 +35,31 @@ export default function DashboardPage() {
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['user'] });
+  };
+
+  const handleSync = async () => {
+    try {
+      setSyncError(null);
+      setSyncResult(null);
+      setShowSyncModal(true);
+      // Synchroniser les laptops avec détection automatique des attributs
+      const result = await syncMutation.mutateAsync({
+        objectTypeName: 'Laptop',
+        autoDetectAttributes: true,
+        schemaName: 'Parc Informatique',
+        limit: 1000
+      });
+      setSyncResult(result);
+    } catch (error: any) {
+      setSyncError(error);
+      setSyncResult(null);
+    }
+  };
+
+  const handleCloseSyncModal = () => {
+    setShowSyncModal(false);
+    setSyncResult(null);
+    setSyncError(null);
   };
 
   const isLoading = authLoading || userLoading;
@@ -99,17 +134,16 @@ export default function DashboardPage() {
       color: 'from-blue-500 to-cyan-500',
     },
     {
-      label: 'Rapports',
+      label: 'Tous les Équipements',
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
         </svg>
       ),
       onClick: () => {
-        // TODO: Implémenter la navigation vers les rapports
-        console.log('Rapports');
+        router.push('/equipment');
       },
-      color: 'from-purple-500 to-pink-500',
+      color: 'from-indigo-500 to-violet-500',
     },
     {
       label: 'Paramètres',
@@ -158,7 +192,7 @@ export default function DashboardPage() {
         <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
           <div className="text-center">
             <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent mx-auto"></div>
-            <div className="text-lg text-zinc-600 dark:text-zinc-400">Chargement du dashboard...</div>
+            <div className="text-lg text-zinc-600 dark:text-zinc-400">Chargement du tableau de bord...</div>
           </div>
         </div>
       </ProtectedRoute>
@@ -175,7 +209,7 @@ export default function DashboardPage() {
               Erreur de chargement
             </h2>
             <p className="text-zinc-600 dark:text-zinc-400 mb-4">
-              Impossible de charger les données du dashboard
+              Impossible de charger les données du tableau de bord
             </p>
             <button
               onClick={handleRefresh}
@@ -204,6 +238,20 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={handleSync}
+                disabled={syncMutation.isPending}
+                className="rounded-lg bg-blue-600 bg-opacity-10 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 px-4 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/50 flex items-center justify-center gap-2"
+              >
+                <svg className={`w-4 h-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {syncMutation.isPending ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  )}
+                </svg>
+                {syncMutation.isPending ? 'Synchronisation...' : 'Synchroniser Jira'}
+              </button>
               <button
                 onClick={handleRefresh}
                 className="rounded-lg bg-zinc-100 dark:bg-zinc-800 px-4 py-2 text-sm font-medium text-black dark:text-zinc-50 transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
@@ -254,6 +302,15 @@ export default function DashboardPage() {
           <div className="mb-8">
             <ActivityFeed activities={recentActivities} />
           </div>
+
+          {/* Modal de résultat de synchronisation */}
+          <SyncResultModal
+            isOpen={showSyncModal}
+            onClose={handleCloseSyncModal}
+            result={syncResult}
+            error={syncError}
+            isLoading={syncMutation.isPending}
+          />
         </div>
       </div>
     </ProtectedRoute>

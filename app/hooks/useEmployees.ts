@@ -72,6 +72,28 @@ export const useSyncEmployees = () => {
 };
 
 /**
+ * Hook pour synchroniser les photos des employés
+ */
+export const useSyncEmployeePhotos = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ token, batchSize, maxUsers }: { token?: string; batchSize?: number; maxUsers?: number } = {}) => {
+      // Si pas de token fourni, essayer de récupérer depuis le localStorage
+      let azureToken = token;
+      if (!azureToken && typeof window !== 'undefined') {
+        azureToken = localStorage.getItem('azure_access_token') || undefined;
+      }
+      return employeesApi.syncPhotos(azureToken, batchSize, maxUsers);
+    },
+    onSuccess: () => {
+      // Invalider toutes les requêtes d'employés après synchronisation
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+};
+
+/**
  * Hook pour mettre à jour un employé
  */
 export const useUpdateEmployee = () => {

@@ -5,6 +5,7 @@ import {
   PaginatedEmployeesResponse,
   EmployeeStats,
   SyncResponse,
+  SyncPhotosResponse,
 } from '../types/employee';
 
 /**
@@ -53,9 +54,29 @@ export const employeesApi = {
     if (!token && typeof window !== 'undefined') {
       token = localStorage.getItem('azure_access_token') || undefined;
     }
-    
+
     const response = await axiosInstance.post<SyncResponse>('/employees/sync', {
       token,
+    });
+    return response.data;
+  },
+
+  /**
+   * Synchroniser les photos de profil des employés
+   */
+  syncPhotos: async (token?: string, batchSize: number = 50, maxUsers: number = 100): Promise<SyncPhotosResponse> => {
+    // Si pas de token fourni, essayer de le récupérer depuis localStorage
+    if (!token && typeof window !== 'undefined') {
+      token = localStorage.getItem('azure_access_token') || undefined;
+    }
+
+    const response = await axiosInstance.post<SyncPhotosResponse>('/employees/sync-photos', {
+      token,
+    }, {
+      params: {
+        batchSize,
+        maxUsers
+      }
     });
     return response.data;
   },

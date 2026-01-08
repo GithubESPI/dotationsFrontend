@@ -6,12 +6,21 @@ import { useEquipmentSearch } from '../hooks/useEquipment';
 import { useEquipmentSearchStore } from '../stores/equipmentSearchStore';
 import EquipmentFormModal from '../components/equipment/EquipmentFormModal';
 import { Equipment } from '../types/equipment';
+import { useSyncLaptops } from '../hooks/useJiraAsset';
+import SyncResultModal from '../components/equipment/SyncResultModal';
+import { SyncResponse } from '../types/jira-asset';
 
 export default function EquipmentPage() {
   const { searchParams, setPage } = useEquipmentSearchStore();
   const { data, isLoading, error, refetch } = useEquipmentSearch(searchParams);
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+
+  // États pour la synchronisation Jira
+  const syncMutation = useSyncLaptops();
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncResult, setSyncResult] = useState<SyncResponse | null>(null);
+  const [syncError, setSyncError] = useState<Error | null>(null);
 
   const handleCreateEquipment = () => {
     setSelectedEquipment(null);
@@ -33,6 +42,32 @@ export default function EquipmentPage() {
     handleCloseFormModal();
   };
 
+  const handleSync = async () => {
+    try {
+      setSyncError(null);
+      setSyncResult(null);
+      setShowSyncModal(true);
+      // Synchroniser les laptops avec détection automatique des attributs
+      const result = await syncMutation.mutateAsync({
+        objectTypeName: 'Laptop',
+        autoDetectAttributes: true,
+        schemaName: 'Parc Informatique',
+        limit: 1000
+      });
+      setSyncResult(result);
+      refetch(); // Rafraîchir la liste après synchronisation
+    } catch (error: any) {
+      setSyncError(error);
+      setSyncResult(null);
+    }
+  };
+
+  const handleCloseSyncModal = () => {
+    setShowSyncModal(false);
+    setSyncResult(null);
+    setSyncError(null);
+  };
+
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -52,12 +87,28 @@ export default function EquipmentPage() {
                 Gérez les équipements et synchronisez depuis Jira Asset
               </p>
             </div>
-            <button
-              onClick={handleCreateEquipment}
-              className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg"
-            >
-              + Créer un équipement
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleSync}
+                disabled={syncMutation.isPending}
+                className="px-6 py-3 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium transition-all duration-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <svg className={`w-5 h-5 ${syncMutation.isPending ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {syncMutation.isPending ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  )}
+                </svg>
+                {syncMutation.isPending ? 'Synchronisation...' : 'Synchroniser Jira'}
+              </button>
+              <button
+                onClick={handleCreateEquipment}
+                className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg"
+              >
+                + Créer un équipement
+              </button>
+            </div>
           </div>
 
           {/* Résultats */}
@@ -113,13 +164,12 @@ export default function EquipmentPage() {
                         </p>
                       </div>
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          equipment.status === 'DISPONIBLE'
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                            : equipment.status === 'AFFECTE'
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${equipment.status === 'DISPONIBLE'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                          : equipment.status === 'AFFECTE'
                             ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
                             : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300'
-                        }`}
+                          }`}
                       >
                         {equipment.status}
                       </span>
@@ -178,15 +228,40 @@ export default function EquipmentPage() {
                 <p className="text-zinc-500 dark:text-zinc-500 mb-4">
                   Créez votre premier équipement ou synchronisez depuis Jira
                 </p>
-                <button
-                  onClick={handleCreateEquipment}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-                >
-                  Créer un équipement
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={handleSync}
+                    disabled={syncMutation.isPending}
+                    className="rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center justify-center gap-2"
+                  >
+                    <svg className={`w-4 h-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {syncMutation.isPending ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      )}
+                    </svg>
+                    {syncMutation.isPending ? 'Synchronisation...' : 'Synchroniser Jira'}
+                  </button>
+                  <button
+                    onClick={handleCreateEquipment}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                  >
+                    Créer un équipement
+                  </button>
+                </div>
               </div>
             </div>
           )}
+
+          {/* Modal de résultat de synchronisation */}
+          <SyncResultModal
+            isOpen={showSyncModal}
+            onClose={handleCloseSyncModal}
+            result={syncResult}
+            error={syncError}
+            isLoading={syncMutation.isPending}
+          />
 
           {/* Modal de formulaire */}
           <EquipmentFormModal

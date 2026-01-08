@@ -9,6 +9,7 @@ interface SyncResultModalProps {
   result: SyncResponse | null;
   error: Error | null;
   isLoading?: boolean;
+  mode?: 'employees' | 'photos';
 }
 
 const SyncResultModal: React.FC<SyncResultModalProps> = ({
@@ -17,12 +18,15 @@ const SyncResultModal: React.FC<SyncResultModalProps> = ({
   result,
   error,
   isLoading = false,
+  mode = 'employees',
 }) => {
+  const isPhotos = mode === 'photos';
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={isLoading ? undefined : onClose}
-      title="Résultat de la synchronisation"
+      title={isPhotos ? "Résultat de la synchronisation des photos" : "Résultat de la synchronisation"}
       size="md"
       showCloseButton={!isLoading}
     >
@@ -46,10 +50,12 @@ const SyncResultModal: React.FC<SyncResultModalProps> = ({
             </div>
           </div>
           <h3 className="text-xl font-semibold text-black dark:text-zinc-50 mb-2">
-            Synchronisation en cours...
+            {isPhotos ? "Synchronisation des photos..." : "Synchronisation en cours..."}
           </h3>
           <p className="text-zinc-600 dark:text-zinc-400">
-            Veuillez patienter pendant la synchronisation des employés depuis Office 365
+            {isPhotos
+              ? "Veuillez patienter pendant la récupération des photos de profil"
+              : "Veuillez patienter pendant la synchronisation des employés depuis Office 365"}
           </p>
         </div>
       ) : error ? (
@@ -111,13 +117,15 @@ const SyncResultModal: React.FC<SyncResultModalProps> = ({
               Synchronisation terminée
             </h3>
             <p className="text-zinc-600 dark:text-zinc-400">
-              Les employés ont été synchronisés depuis Office 365
+              {isPhotos
+                ? "Les photos de profil ont été synchronisées"
+                : "Les employés ont été synchronisés depuis Office 365"}
             </p>
           </div>
 
           {/* Résultats */}
           <div className="space-y-4">
-            {/* Employés synchronisés */}
+            {/* Employés/Photos synchronisés */}
             <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
@@ -127,17 +135,21 @@ const SyncResultModal: React.FC<SyncResultModalProps> = ({
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
+                    {isPhotos ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    ) : (
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    )}
                   </svg>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                    Employés synchronisés
+                    {isPhotos ? "Photos mises à jour" : "Employés synchronisés"}
                   </p>
                   <p className="text-2xl font-bold text-black dark:text-zinc-50">
                     {result.synced.toLocaleString()}
@@ -198,7 +210,7 @@ const SyncResultModal: React.FC<SyncResultModalProps> = ({
                   </div>
                   <div>
                     <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                      Ignorés
+                      {isPhotos ? "Non disponibles" : "Ignorés"}
                     </p>
                     <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                       {result.skipped.toLocaleString()}
@@ -206,7 +218,7 @@ const SyncResultModal: React.FC<SyncResultModalProps> = ({
                   </div>
                 </div>
                 <p className="text-xs text-zinc-500 dark:text-zinc-500 max-w-xs text-right">
-                  Comptes invités ou système
+                  {isPhotos ? "Employés sans photo ou erreur introuvable" : "Comptes invités ou système"}
                 </p>
               </div>
             )}

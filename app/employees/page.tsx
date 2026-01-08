@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useEmployeeSearchStore } from '../stores/employeeSearchStore';
-import { useEmployeesSearch, useSyncEmployees, useDeactivateEmployee } from '../hooks/useEmployees';
+import { useEmployeesSearch, useSyncEmployees, useSyncEmployeePhotos, useDeactivateEmployee } from '../hooks/useEmployees';
 import SearchBar from '../components/employees/SearchBar';
 import EmployeeFilters from '../components/employees/EmployeeFilters';
 import EmployeeCard from '../components/employees/EmployeeCard';
@@ -25,6 +25,13 @@ export default function EmployeesPage() {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncResult, setSyncResult] = useState<any>(null);
   const [syncError, setSyncError] = useState<Error | null>(null);
+
+  // États pour la synchronisation des photos
+  const syncPhotosMutation = useSyncEmployeePhotos();
+  const [showPhotoSyncModal, setShowPhotoSyncModal] = useState(false);
+  const [photoSyncResult, setPhotoSyncResult] = useState<any>(null);
+  const [photoSyncError, setPhotoSyncError] = useState<Error | null>(null);
+
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedEmployeeDetails, setSelectedEmployeeDetails] = useState<Employee | null>(null);
 
@@ -33,7 +40,7 @@ export default function EmployeesPage() {
       setSyncError(null);
       setSyncResult(null);
       setShowSyncModal(true);
-      const result = await syncMutation.mutateAsync();
+      const result = await syncMutation.mutateAsync(undefined);
       setSyncResult(result);
     } catch (error: any) {
       setSyncError(error);
@@ -45,6 +52,30 @@ export default function EmployeesPage() {
     setShowSyncModal(false);
     setSyncResult(null);
     setSyncError(null);
+  };
+
+  const handlePhotoSync = async () => {
+    try {
+      setPhotoSyncError(null);
+      setPhotoSyncResult(null);
+      setShowPhotoSyncModal(true);
+      const result = await syncPhotosMutation.mutateAsync({});
+      // Mapper le résultat 'updated' vers 'synced' pour le modal
+      setPhotoSyncResult({
+        synced: result.updated,
+        errors: result.errors,
+        skipped: result.skipped
+      });
+    } catch (error: any) {
+      setPhotoSyncError(error);
+      setPhotoSyncResult(null);
+    }
+  };
+
+  const handleClosePhotoSyncModal = () => {
+    setShowPhotoSyncModal(false);
+    setPhotoSyncResult(null);
+    setPhotoSyncError(null);
   };
 
   const handleDeactivate = async (id: string) => {
@@ -93,13 +124,31 @@ export default function EmployeesPage() {
                 Recherchez et gérez les employés synchronisés depuis Office 365
               </p>
             </div>
-            <button
-              onClick={handleSync}
-              disabled={syncMutation.isPending}
-              className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {syncMutation.isPending ? 'Synchronisation...' : 'Synchroniser depuis Office 365'}
-            </button>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handlePhotoSync}
+                disabled={syncPhotosMutation.isPending || syncMutation.isPending}
+                className="px-6 py-3 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium transition-all duration-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                title="Synchroniser les photos de profil (optionnel)"
+              >
+                <svg className={`w-5 h-5 ${syncPhotosMutation.isPending ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {syncPhotosMutation.isPending ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  )}
+                </svg>
+                {syncPhotosMutation.isPending ? 'Photos...' : 'Photos'}
+              </button>
+              <button
+                onClick={handleSync}
+                disabled={syncMutation.isPending || syncPhotosMutation.isPending}
+                className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {syncMutation.isPending ? 'Synchronisation...' : 'Synchroniser depuis Office 365'}
+              </button>
+            </div>
           </div>
 
           {/* Statistiques */}
@@ -213,6 +262,17 @@ export default function EmployeesPage() {
             result={syncResult}
             error={syncError}
             isLoading={syncMutation.isPending}
+            mode="employees"
+          />
+
+          {/* Modal de résultat de synchronisation des photos */}
+          <SyncResultModal
+            isOpen={showPhotoSyncModal}
+            onClose={handleClosePhotoSyncModal}
+            result={photoSyncResult}
+            error={photoSyncError}
+            isLoading={syncPhotosMutation.isPending}
+            mode="photos"
           />
 
           {/* Modal de détails de l'employé */}
@@ -226,7 +286,7 @@ export default function EmployeesPage() {
           <AllocationFormModal />
         </div>
       </div>
-    </ProtectedRoute>
+    </ProtectedRoute >
   );
 }
 
