@@ -6,7 +6,8 @@ import { CreateEquipmentSchema, EquipmentTypeSchema, EquipmentStatusSchema } fro
 import { useCreateEquipment, useUpdateEquipment, useEquipment } from '../../hooks/useEquipment';
 import Modal from '../ui/Modal';
 import JiraAssetSelector from './JiraAssetSelector';
-import { JiraAssetObject } from '../../types/jira-asset';
+import { JiraAssetObject, ObjectTypeAttribute } from '../../types/jira-asset';
+import { jiraAssetApi } from '../../api/jira-asset';
 import { z } from 'zod';
 
 interface EquipmentFormModalProps {
@@ -71,8 +72,26 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
       currentUserId: '',
       location: '',
       additionalSoftwares: [],
+      jiraAttributes: {},
     },
   });
+
+  // State pour les définitions d'attributs dynamiques
+  const [attributeDefinitions, setAttributeDefinitions] = useState<ObjectTypeAttribute[]>([]);
+  const [loadingAttributes, setLoadingAttributes] = useState(false);
+
+  // Charger les définitions d'attributs quand un type d'objet est détecté
+  const fetchAttributeDefinitions = async (objectTypeId: string) => {
+    try {
+      setLoadingAttributes(true);
+      const definitions = await jiraAssetApi.getObjectTypeAttributesById(objectTypeId);
+      setAttributeDefinitions(definitions);
+    } catch (error) {
+      console.error('Erreur lors du chargement des définitions d\'attributs:', error);
+    } finally {
+      setLoadingAttributes(false);
+    }
+  };
 
   // Charger les données de l'équipement existant en mode édition
   useEffect(() => {
@@ -90,7 +109,11 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
         currentUserId: existingEquipment.currentUserId || '',
         location: existingEquipment.location || '',
         additionalSoftwares: existingEquipment.additionalSoftwares || [],
+        jiraAttributes: existingEquipment.jiraAttributes || {},
       });
+      // Si on édite un équipement avec des attributs Jira, on pourrait vouloir charger les définitions
+      // Mais on ne connait pas forcément le Jira Object Type Name d'origine facile à ce stade
+      // On affiche juste les attributs existants pour le moment.
     } else if (isOpen && !equipmentId) {
       // Réinitialiser pour création
       reset({
@@ -106,7 +129,9 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
         currentUserId: '',
         location: '',
         additionalSoftwares: [],
+        jiraAttributes: {},
       });
+      setAttributeDefinitions([]);
       setSelectedJiraAsset(null);
     }
   }, [isOpen, equipmentId, existingEquipment, reset]);
@@ -166,6 +191,47 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
 
     // Toujours définir le jiraAssetId
     setValue('jiraAssetId', asset.id);
+
+    // Charger les détails des attributs pour ce type d'objet
+    // On essaie de deviner le type d'objet (ex: Laptop) ou on utilise une valeur par défaut
+    // Note: asset.objectTypeId est un ID, pas un nom. Le nom est souvent nécessaire.
+    // Si l'objet retourné contient le nom du type, on l'utilise
+    const objectTypeName = (asset as any).objectType?.name || 'Laptop'; // Fallback à Laptop par défaut
+
+    if (objectTypeName) {
+      await fetchAttributeDefinitions(objectTypeName);
+
+      // Construire l'objet jiraAttributes (Nom -> Valeur)
+      // On le fera après avoir récupéré les définitions dans un useEffect ou ici direct
+      // Comme fetchAttributeDefinitions est async mais met à jour le state, 
+      // on peut appeler getObjectTypeAttributes directement ici aussi pour mapper tout de suite
+      try {
+        const definitions = await jiraAssetApi.getObjectTypeAttributes(objectTypeName);
+        setAttributeDefinitions(definitions);
+
+        const dynamicAttributes: Record<string, any> = {};
+
+        // Mapper les IDs d'attributs vers leurs noms
+        asset.attributes.forEach(attr => {
+          const def = definitions.find(d => d.id === attr.objectTypeAttributeId);
+          if (def) {
+            const values = attr.objectAttributeValues.map(v => {
+              if (v.referencedObject) return v.referencedObject.name || v.referencedObject.label || v.referencedObject.objectKey;
+              if (v.status) return v.status.name;
+              return v.value;
+            });
+
+            // Si une seule valeur, on la sort du tableau (sauf si c'est un champ multiple par nature ?)
+            // Pour l'affichage simple, on prend la première ou on join
+            dynamicAttributes[def.name] = values.length === 1 ? values[0] : values;
+          }
+        });
+
+        setValue('jiraAttributes', dynamicAttributes);
+      } catch (e) {
+        console.error("Impossible de récupérer les attributs dynamiques", e);
+      }
+    }
   };
 
   const onSubmit = async (data: z.infer<typeof CreateEquipmentSchema>) => {
@@ -415,6 +481,41 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
               <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">
                 Vous pouvez modifier ces valeurs si nécessaire
               </p>
+            </div>
+          )}
+
+          {/* Attributs dynamiques Jira */}
+          {Object.keys(watch('jiraAttributes') || {}).length > 0 && (
+            <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+              <h3 className="text-md font-medium text-black dark:text-zinc-50 flex items-center gap-2">
+                <span>🧩</span> Détails techniques (Jira)
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                {Object.entries(watch('jiraAttributes') || {}).map(([key, value]) => {
+                  // Ignorer les attributs déjà mappés dans les champs principaux pour éviter la duplication visuelle
+                  const lowerKey = key.toLowerCase();
+                  if (
+                    lowerKey.includes('serial') || lowerKey.includes('série') ||
+                    lowerKey.includes('brand') || lowerKey.includes('marque') || lowerKey.includes('constructeur') ||
+                    lowerKey.includes('model') || lowerKey.includes('modèle') ||
+                    lowerKey.includes('status') || lowerKey.includes('statut')
+                  ) {
+                    return null;
+                  }
+
+                  let displayValue = String(value);
+                  if (Array.isArray(value)) displayValue = value.join(', ');
+                  if (typeof value === 'object' && value !== null) displayValue = JSON.stringify(value);
+
+                  return (
+                    <div key={key} className="flex flex-col">
+                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{key}</span>
+                      <span className="text-sm text-black dark:text-zinc-200 font-medium truncate" title={displayValue}>{displayValue}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 

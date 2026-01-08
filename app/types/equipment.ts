@@ -42,6 +42,7 @@ export const EquipmentSchema = z.object({
   additionalSoftwares: z.array(z.string()).optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
+  jiraAttributes: z.record(z.any()).optional(),
 });
 
 export type Equipment = z.infer<typeof EquipmentSchema>;
@@ -114,6 +115,7 @@ export const CreateEquipmentSchema = z.object({
   currentUserId: z.string().optional(),
   location: z.string().optional(),
   additionalSoftwares: z.array(z.string()).optional(),
+  jiraAttributes: z.record(z.any()).optional(),
 });
 
 export type CreateEquipment = z.infer<typeof CreateEquipmentSchema>;

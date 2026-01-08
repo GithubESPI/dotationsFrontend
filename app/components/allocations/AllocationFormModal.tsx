@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateAllocationSchema, EquipmentItem } from '../../types/allocation';
+import { CreateAllocationSchema, CreateAllocation, EquipmentItem } from '../../types/allocation';
 import { useAllocationFormStore } from '../../stores/allocationFormStore';
 import { useCreateAllocation } from '../../hooks/useAllocations';
 import { useAvailableEquipment } from '../../hooks/useEquipment';
@@ -132,10 +132,10 @@ const AllocationFormModal: React.FC = () => {
           if (!eq.serialNumber && !eq.equipmentId) {
             throw new Error(`L'équipement ${index + 1} doit avoir un numéro de série ou être sélectionné depuis le système`);
           }
-          
+
           // Construire l'objet équipement avec tous les champs nécessaires
           const cleaned: any = {};
-          
+
           // Champs requis ou fortement recommandés
           if (eq.equipmentId) {
             cleaned.equipmentId = eq.equipmentId;
@@ -143,7 +143,7 @@ const AllocationFormModal: React.FC = () => {
           if (eq.serialNumber) {
             cleaned.serialNumber = eq.serialNumber;
           }
-          
+
           // Champs optionnels mais importants
           if (eq.type) cleaned.type = eq.type;
           if (eq.brand) cleaned.brand = eq.brand;
@@ -151,18 +151,18 @@ const AllocationFormModal: React.FC = () => {
           if (eq.internalId) cleaned.internalId = eq.internalId;
           if (eq.deliveredDate) cleaned.deliveredDate = eq.deliveredDate;
           if (eq.condition) cleaned.condition = eq.condition;
-          
+
           // Ajouter les champs Jira si présents
           const jiraAsset = selectedJiraAssets[index];
           if (jiraAsset) {
             cleaned.jiraAssetId = jiraAsset.id;
           }
-          
+
           // Validation finale : au moins equipmentId OU serialNumber doit être présent
           if (!cleaned.equipmentId && !cleaned.serialNumber) {
             throw new Error(`L'équipement ${index + 1} doit avoir un numéro de série ou un ID d'équipement`);
           }
-          
+
           return cleaned;
         }),
         deliveryDate: data.deliveryDate || new Date().toISOString().split('T')[0],
@@ -174,7 +174,7 @@ const AllocationFormModal: React.FC = () => {
       };
 
       console.log('Données à envoyer:', cleanedData);
-      
+
       await createAllocation.mutateAsync(cleanedData);
       closeModal();
       reset();
@@ -187,14 +187,14 @@ const AllocationFormModal: React.FC = () => {
         data: error?.response?.data,
         message: error?.message,
       });
-      
+
       // Gestion d'erreur plus détaillée
       let errorMessage = 'Erreur lors de la création de l\'allocation';
-      
+
       // Priorité 1 : Message d'erreur du backend
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
-      } 
+      }
       // Priorité 2 : Erreur de validation du backend
       else if (error?.response?.data?.error) {
         errorMessage = error.response.data.error;
@@ -206,12 +206,12 @@ const AllocationFormModal: React.FC = () => {
       // Priorité 4 : Message d'erreur générique
       else if (error?.message) {
         errorMessage = error.message;
-      } 
+      }
       // Priorité 5 : String directe
       else if (typeof error === 'string') {
         errorMessage = error;
       }
-      
+
       alert(errorMessage);
     }
   };
@@ -388,11 +388,10 @@ const AllocationFormModal: React.FC = () => {
             {fields.map((field, index) => (
               <div
                 key={field.id}
-                className={`p-3 sm:p-4 border rounded-lg space-y-3 sm:space-y-4 transition-all ${
-                  selectedJiraAssets[index]
+                className={`p-3 sm:p-4 border rounded-lg space-y-3 sm:space-y-4 transition-all ${selectedJiraAssets[index]
                     ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-900/10'
                     : 'border-zinc-200 dark:border-zinc-700'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-sm sm:text-base font-medium text-zinc-900 dark:text-zinc-50">
@@ -556,11 +555,10 @@ const AllocationFormModal: React.FC = () => {
                       type="text"
                       {...register(`equipments.${index}.type`)}
                       placeholder="Sélectionnez un équipement pour remplir automatiquement"
-                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border ${
-                        selectedJiraAssets[index] || watch(`equipments.${index}.equipmentId`)
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border ${selectedJiraAssets[index] || watch(`equipments.${index}.equipmentId`)
                           ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
                           : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
-                      } text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        } text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       readOnly
                     />
                   </div>
@@ -574,11 +572,10 @@ const AllocationFormModal: React.FC = () => {
                       type="text"
                       {...register(`equipments.${index}.serialNumber`)}
                       placeholder="Sélectionnez un équipement pour remplir automatiquement"
-                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border font-mono ${
-                        selectedJiraAssets[index] || watch(`equipments.${index}.equipmentId`)
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border font-mono ${selectedJiraAssets[index] || watch(`equipments.${index}.equipmentId`)
                           ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
                           : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
-                      } text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        } text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       readOnly
                     />
                   </div>
@@ -592,11 +589,10 @@ const AllocationFormModal: React.FC = () => {
                       type="text"
                       {...register(`equipments.${index}.internalId`)}
                       placeholder="Ex: PI-1234"
-                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border ${
-                        selectedJiraAssets[index] && watch(`equipments.${index}.internalId`)
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border ${selectedJiraAssets[index] && watch(`equipments.${index}.internalId`)
                           ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
                           : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
-                      } text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        } text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     />
                   </div>
 

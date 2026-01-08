@@ -16,7 +16,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const { searchParams, setQuery } = useEmployeeSearchStore();
   const [localQuery, setLocalQuery] = useState(searchParams.query || '');
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setLocalQuery(searchParams.query || '');

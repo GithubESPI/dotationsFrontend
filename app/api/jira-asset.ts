@@ -7,6 +7,7 @@ import {
   SearchJiraAssetsParams,
   SyncLaptopsParams,
   SyncResponse,
+  ObjectTypeAttribute,
 } from '../types/jira-asset';
 
 /**
@@ -40,6 +41,26 @@ export const jiraAssetApi = {
   ): Promise<JiraObjectTypeResponse> => {
     const response = await axiosInstance.get<JiraObjectTypeResponse>(
       `/jira-asset/schema/${encodeURIComponent(schemaName)}/object-type/${encodeURIComponent(objectTypeName)}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Récupérer les attributs d'un type d'objet
+   */
+  getObjectTypeAttributes: async (objectTypeName: string): Promise<ObjectTypeAttribute[]> => {
+    const response = await axiosInstance.get<ObjectTypeAttribute[]>(
+      `/jira-asset/object-type/${encodeURIComponent(objectTypeName)}/attributes`
+    );
+    return response.data;
+  },
+
+  /**
+   * Récupérer les attributs d'un type d'objet par son ID
+   */
+  getObjectTypeAttributesById: async (objectTypeId: string): Promise<ObjectTypeAttribute[]> => {
+    const response = await axiosInstance.get<ObjectTypeAttribute[]>(
+      `/jira-asset/object-type-id/${encodeURIComponent(objectTypeId)}/attributes`
     );
     return response.data;
   },

@@ -11,6 +11,8 @@ export const JiraAssetAttributeSchema = z.object({
         .object({
           id: z.string().optional(),
           objectKey: z.string().optional(),
+          name: z.string().optional(),
+          label: z.string().optional(),
           objectType: z
             .object({
               id: z.string().optional(),
@@ -112,6 +114,20 @@ export const SyncLaptopsParamsSchema = z.object({
 export type SyncLaptopsParams = z.infer<typeof SyncLaptopsParamsSchema>;
 
 // Schéma pour la réponse de synchronisation
+
+// Schéma pour les détails d'un attribut de type d'objet
+export const ObjectTypeAttributeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.number().optional(),
+  description: z.string().optional(),
+  defaultType: z.object({ id: z.number(), name: z.string() }).optional(),
+  editable: z.boolean().optional(),
+  removable: z.boolean().optional(),
+});
+
+export type ObjectTypeAttribute = z.infer<typeof ObjectTypeAttributeSchema>;
+
 export const SyncResponseSchema = z.object({
   created: z.number(),
   updated: z.number(),
