@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateAllocationSchema, CreateAllocation, EquipmentItem } from '../../types/allocation';
 import { useAllocationFormStore } from '../../stores/allocationFormStore';
 import { useCreateAllocation } from '../../hooks/useAllocations';
+import { useGenerateAllocationPDF } from '../../hooks/usePdf';
 import { useAvailableEquipment } from '../../hooks/useEquipment';
 import Modal from '../ui/Modal';
 import { EquipmentTypeSchema } from '../../types/equipment';
@@ -52,6 +53,7 @@ const AllocationFormModal: React.FC = () => {
   } = useAllocationFormStore();
 
   const createAllocation = useCreateAllocation();
+  const generateAllocationPDF = useGenerateAllocationPDF();
   const { data: availableEquipment, isLoading: isLoadingEquipment } = useAvailableEquipment();
 
   const {
@@ -170,7 +172,24 @@ const AllocationFormModal: React.FC = () => {
 
       console.log('Données à envoyer:', cleanedData);
 
-      await createAllocation.mutateAsync(cleanedData);
+      // 1. Créer l'allocation
+      const newAllocationPromise = createAllocation.mutateAsync(cleanedData);
+
+      // Afficher un état de chargement/succès ?
+      // Pour l'instant on attend la réponse
+      const newAllocation = await newAllocationPromise;
+
+      // 2. Si succès, générer le PDF
+      if (newAllocation && newAllocation._id) {
+        try {
+          await generateAllocationPDF.mutateAsync(newAllocation._id);
+          // Succès silencieux ou toast global
+        } catch (e) {
+          console.error("Erreur génération PDF", e);
+          alert("Allocation créée avec succès, mais échec de la génération du PDF. Veuillez contacter le support.");
+        }
+      }
+
       closeModal();
       reset();
     } catch (error: any) {
@@ -637,7 +656,7 @@ const AllocationFormModal: React.FC = () => {
             disabled={isSubmitting || createAllocation.isPending}
             className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting || createAllocation.isPending ? 'Création...' : 'Créer l\'allocation'}
+            {isSubmitting || createAllocation.isPending || generateAllocationPDF.isPending ? 'Traitement...' : 'Créer l\'allocation'}
           </button>
         </div>
       </form>

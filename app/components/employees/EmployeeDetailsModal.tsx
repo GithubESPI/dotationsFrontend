@@ -2,6 +2,10 @@
 import React from 'react';
 import Modal from '../ui/Modal';
 import { Employee } from '../../types/employee';
+import { useAllocationsByUserId } from '../../hooks/useAllocations';
+import ReturnFormModal from '../returns/ReturnFormModal';
+import { useState } from 'react';
+import { Allocation } from '../../types/allocation';
 
 interface EmployeeDetailsModalProps {
   isOpen: boolean;
@@ -14,6 +18,9 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
   onClose,
   employee,
 }) => {
+  const [selectedAllocation, setSelectedAllocation] = useState<Allocation | null>(null);
+  const { data: allocations, isLoading: isLoadingAllocations } = useAllocationsByUserId(employee?._id);
+
   if (!employee) return null;
 
   // Générer des initiales
@@ -109,11 +116,10 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
         <div className="flex items-start gap-6 mb-6 pb-6 border-b border-zinc-200 dark:border-zinc-700">
           <div className="relative flex-shrink-0">
             <div
-              className={`w-24 h-24 rounded-2xl border-4 border-zinc-200 dark:border-zinc-700 shadow-lg overflow-hidden ${
-                employee.profilePicture || employee.profilePictureUrl
-                  ? ''
-                  : getAvatarColor(employee.displayName)
-              }`}
+              className={`w-24 h-24 rounded-2xl border-4 border-zinc-200 dark:border-zinc-700 shadow-lg overflow-hidden ${employee.profilePicture || employee.profilePictureUrl
+                ? ''
+                : getAvatarColor(employee.displayName)
+                }`}
             >
               {employee.profilePicture || employee.profilePictureUrl ? (
                 <img
@@ -149,11 +155,10 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">{employee.email}</p>
             <div className="flex items-center gap-2">
               <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  employee.isActive
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                    : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-                }`}
+                className={`px-3 py-1 rounded-full text-xs font-medium ${employee.isActive
+                  ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                  : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                  }`}
               >
                 {employee.isActive ? 'Actif' : 'Inactif'}
               </span>
@@ -317,8 +322,74 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
             <InfoItem label="ID MongoDB" value={employee._id} />
             <InfoItem label="Dernière synchronisation" value={formatDate(employee.lastSync)} />
             <InfoItem label="Date de création" value={formatDate(employee.createdAt)} />
+            <InfoItem label="Date de création" value={formatDate(employee.createdAt)} />
             <InfoItem label="Dernière mise à jour" value={formatDate(employee.updatedAt)} />
           </InfoSection>
+        </div>
+
+        {/* Section Allocations */}
+        <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-700">
+          <h3 className="text-xl font-bold text-black dark:text-zinc-50 mb-4 flex items-center gap-2">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            Allocations & Matériel
+          </h3>
+
+          {isLoadingAllocations ? (
+            <div className="p-4 text-center text-zinc-500">Chargement des allocations...</div>
+          ) : allocations && allocations.length > 0 ? (
+            <div className="space-y-4">
+              {allocations.map((allocation: any) => (
+                <div key={allocation._id} className="bg-white dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h4 className="font-semibold text-lg text-black dark:text-white">
+                        Allocation du {formatDate(allocation.deliveryDate)}
+                      </h4>
+                      <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${['EN_COURS', 'en_cours'].includes(allocation.status) ? 'bg-green-100 text-green-800' :
+                          ['TERMINEE', 'terminee'].includes(allocation.status) ? 'bg-gray-100 text-gray-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        {allocation.status === 'en_cours' ? 'En cours' : allocation.status === 'terminee' ? 'Terminée' : allocation.status}
+                      </span>
+                    </div>
+                    {(['EN_COURS', 'en_cours', 'EN_RETARD', 'en_retard'].includes(allocation.status)) && (
+                      <button
+                        onClick={() => setSelectedAllocation(allocation)}
+                        className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Restituer
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {allocation.equipments.map((eq: any, idx: number) => (
+                      <div key={idx} className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-3 text-sm border border-zinc-200 dark:border-zinc-800">
+                        <div className="font-medium text-black dark:text-white">
+                          {(eq.equipmentId?.brand || '')} {(eq.equipmentId?.model || '')}
+                        </div>
+                        <div className="text-zinc-500 text-xs mt-1">
+                          S/N: {eq.serialNumber || eq.equipmentId?.serialNumber || 'N/A'}
+                        </div>
+                        <div className="text-zinc-500 text-xs">
+                          ID: {eq.internalId || eq.equipmentId?.internalId || 'N/A'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700">
+              <p className="text-zinc-500">Aucune allocation trouvée pour cet employé.</p>
+            </div>
+          )}
         </div>
 
         {/* Attributs d'extension personnalisés */}
@@ -360,6 +431,14 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
             </InfoSection>
           )}
       </div>
+
+      {selectedAllocation && (
+        <ReturnFormModal
+          isOpen={!!selectedAllocation}
+          onClose={() => setSelectedAllocation(null)}
+          allocation={selectedAllocation}
+        />
+      )}
     </Modal>
   );
 };
