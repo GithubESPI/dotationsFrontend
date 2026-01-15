@@ -9,9 +9,7 @@ import { useAvailableEquipment } from '../../hooks/useEquipment';
 import Modal from '../ui/Modal';
 import { EquipmentTypeSchema } from '../../types/equipment';
 import { z } from 'zod';
-import JiraAssetSelector from '../equipment/JiraAssetSelector';
-import { JiraAssetObject } from '../../types/jira-asset';
-import { jiraAssetToEquipmentFormData, getAttributeValue } from '../../utils/jiraAssetHelpers';
+import LocalEquipmentSearch from './LocalEquipmentSearch';
 
 const equipmentTypeLabels: Record<string, string> = {
   PC_PORTABLE: 'PC Portable',
@@ -55,7 +53,6 @@ const AllocationFormModal: React.FC = () => {
 
   const createAllocation = useCreateAllocation();
   const { data: availableEquipment, isLoading: isLoadingEquipment } = useAvailableEquipment();
-  const [selectedJiraAssets, setSelectedJiraAssets] = useState<Record<number, JiraAssetObject>>({});
 
   const {
     register,
@@ -108,8 +105,6 @@ const AllocationFormModal: React.FC = () => {
         services: [],
         notes: '',
       });
-      // Réinitialiser les sélections Jira quand le modal s'ouvre
-      setSelectedJiraAssets({});
     }
   }, [selectedEmployee, equipments, reset]);
 
@@ -153,9 +148,9 @@ const AllocationFormModal: React.FC = () => {
           if (eq.condition) cleaned.condition = eq.condition;
 
           // Ajouter les champs Jira si présents
-          const jiraAsset = selectedJiraAssets[index];
-          if (jiraAsset) {
-            cleaned.jiraAssetId = jiraAsset.id;
+          // Note: jiraAssetId est maintenant directement dans l'objet équipement s'il a été sélectionné depuis la recherche locale
+          if (eq.jiraAssetId) {
+            cleaned.jiraAssetId = eq.jiraAssetId;
           }
 
           // Validation finale : au moins equipmentId OU serialNumber doit être présent
@@ -178,7 +173,6 @@ const AllocationFormModal: React.FC = () => {
       await createAllocation.mutateAsync(cleanedData);
       closeModal();
       reset();
-      setSelectedJiraAssets({});
     } catch (error: any) {
       console.error('Erreur lors de la création de l\'allocation:', error);
       console.error('Détails de l\'erreur:', {
@@ -229,65 +223,23 @@ const AllocationFormModal: React.FC = () => {
     return 'AUTRES';
   };
 
-  // Gérer la sélection d'un équipement depuis MongoDB
-  const handleEquipmentSelect = (index: number, equipmentId: string) => {
-    const equipment = availableEquipment?.find((eq) => eq._id === equipmentId);
-    if (equipment) {
-      setValue(`equipments.${index}.equipmentId`, equipment._id);
-      setValue(`equipments.${index}.serialNumber`, equipment.serialNumber);
-      setValue(`equipments.${index}.internalId`, equipment.internalId || '');
-      setValue(`equipments.${index}.type`, equipment.type);
-      if (equipment.brand) setValue(`equipments.${index}.brand`, equipment.brand);
-      if (equipment.model) setValue(`equipments.${index}.model`, equipment.model);
-      // Réinitialiser la sélection Jira pour cet index
-      const newSelectedJiraAssets = { ...selectedJiraAssets };
-      delete newSelectedJiraAssets[index];
-      setSelectedJiraAssets(newSelectedJiraAssets);
-    }
-  };
+  // Gérer la sélection d'un équipement depuis la recherche locale
+  const handleLocalEquipmentSelect = (index: number, equipment: any) => {
+    setValue(`equipments.${index}.equipmentId`, equipment._id);
+    setValue(`equipments.${index}.serialNumber`, equipment.serialNumber);
+    setValue(`equipments.${index}.internalId`, equipment.internalId || '');
+    setValue(`equipments.${index}.type`, equipment.type);
+    if (equipment.brand) setValue(`equipments.${index}.brand`, equipment.brand);
+    if (equipment.model) setValue(`equipments.${index}.model`, equipment.model);
 
-  // Gérer la sélection d'un équipement depuis Jira
-  const handleJiraAssetSelect = (index: number, asset: JiraAssetObject, formData: any) => {
-    // Vérifier si l'équipement existe déjà dans MongoDB par numéro de série
-    const existingEquipment = availableEquipment?.find(
-      (eq) => eq.serialNumber === formData.serialNumber
-    );
-
-    if (existingEquipment) {
-      // L'équipement existe déjà, utiliser son ID MongoDB
-      setValue(`equipments.${index}.equipmentId`, existingEquipment._id);
-      setValue(`equipments.${index}.serialNumber`, existingEquipment.serialNumber);
-      setValue(`equipments.${index}.internalId`, existingEquipment.internalId || formData.internalId || '');
-      setValue(`equipments.${index}.type`, existingEquipment.type);
-      if (existingEquipment.brand) setValue(`equipments.${index}.brand`, existingEquipment.brand);
-      if (existingEquipment.model) setValue(`equipments.${index}.model`, existingEquipment.model);
+    // On conserve aussi le jiraAssetId si présent
+    if (equipment.jiraAssetId) {
+      setValue(`equipments.${index}.jiraAssetId`, equipment.jiraAssetId);
     } else {
-      // L'équipement n'existe pas encore, remplir avec les données Jira
-      // equipmentId restera vide (sera créé lors de l'allocation si nécessaire)
-      setValue(`equipments.${index}.equipmentId`, '');
-      if (formData.serialNumber) {
-        setValue(`equipments.${index}.serialNumber`, formData.serialNumber, { shouldValidate: true });
-      }
-      if (formData.internalId) {
-        setValue(`equipments.${index}.internalId`, formData.internalId);
-      }
-      if (formData.type) {
-        const mappedType = mapJiraTypeToEquipmentType(formData.type);
-        if (mappedType) {
-          setValue(`equipments.${index}.type`, mappedType);
-        }
-      }
-      if (formData.brand) {
-        setValue(`equipments.${index}.brand`, formData.brand);
-      }
-      if (formData.model) {
-        setValue(`equipments.${index}.model`, formData.model);
-      }
+      setValue(`equipments.${index}.jiraAssetId`, '');
     }
-
-    // Enregistrer l'asset Jira sélectionné
-    setSelectedJiraAssets((prev) => ({ ...prev, [index]: asset }));
   };
+
 
   if (!selectedEmployee) return null;
 
@@ -370,13 +322,8 @@ const AllocationFormModal: React.FC = () => {
                   deliveredDate: new Date().toISOString().split('T')[0],
                   condition: 'bon_etat',
                 });
-                // Réinitialiser les sélections Jira pour le nouvel index
-                const newIndex = fields.length;
-                setSelectedJiraAssets((prev) => {
-                  const updated = { ...prev };
-                  // Décaler les indices si nécessaire
-                  return updated;
-                });
+                // Réinitialiser les sélections pour le nouvel index
+                // Pas besoin de setSelectedJiraAssets car on ne l'utilise plus
               }}
               className="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors whitespace-nowrap"
             >
@@ -388,9 +335,9 @@ const AllocationFormModal: React.FC = () => {
             {fields.map((field, index) => (
               <div
                 key={field.id}
-                className={`p-3 sm:p-4 border rounded-lg space-y-3 sm:space-y-4 transition-all ${selectedJiraAssets[index]
-                    ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-900/10'
-                    : 'border-zinc-200 dark:border-zinc-700'
+                className={`p-3 sm:p-4 border rounded-lg space-y-3 sm:space-y-4 transition-all ${watch(`equipments.${index}.equipmentId`)
+                  ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-900/10'
+                  : 'border-zinc-200 dark:border-zinc-700'
                   }`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -402,20 +349,6 @@ const AllocationFormModal: React.FC = () => {
                       type="button"
                       onClick={() => {
                         remove(index);
-                        // Supprimer la sélection Jira associée
-                        const newSelectedJiraAssets = { ...selectedJiraAssets };
-                        delete newSelectedJiraAssets[index];
-                        // Réindexer les sélections restantes
-                        const reindexed: Record<number, JiraAssetObject> = {};
-                        Object.keys(newSelectedJiraAssets).forEach((key) => {
-                          const oldIndex = parseInt(key);
-                          if (oldIndex > index) {
-                            reindexed[oldIndex - 1] = newSelectedJiraAssets[oldIndex];
-                          } else if (oldIndex < index) {
-                            reindexed[oldIndex] = newSelectedJiraAssets[oldIndex];
-                          }
-                        });
-                        setSelectedJiraAssets(reindexed);
                       }}
                       className="text-xs sm:text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     >
@@ -425,17 +358,24 @@ const AllocationFormModal: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {/* Sélection équipement depuis Jira */}
+                  {/* Sélection équipement (Locale avec attributs Jira) */}
                   <div className="sm:col-span-2">
                     <label className="block text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      🔍 Rechercher depuis Jira <span className="text-zinc-500">(recommandé)</span>
+                      🔍 Rechercher un équipement <span className="text-zinc-500">(Nom, N/S, Marque...)</span>
                     </label>
-                    <JiraAssetSelector
-                      onSelect={(asset, formData) => handleJiraAssetSelect(index, asset, formData)}
-                      placeholder="Tapez pour rechercher un équipement dans Jira (ex: Dell, SN123456, Latitude...)"
+                    <LocalEquipmentSearch
+                      onSelect={(eq) => handleLocalEquipmentSelect(index, eq)}
+                      placeholder="Recherchez par nom, série, marque ou info Jira..."
                       className="w-full"
+                      // Exclure les équipements déjà sélectionnés dans d'autres lignes
+                      excludeIds={
+                        watch('equipments')
+                          .map((e, i) => i !== index ? e.equipmentId : undefined)
+                          .filter((id): id is string => !!id)
+                      }
                     />
-                    {selectedJiraAssets[index] && (
+
+                    {watch(`equipments.${index}.equipmentId`) && (
                       <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                         <div className="flex items-start gap-2">
                           <svg
@@ -453,7 +393,7 @@ const AllocationFormModal: React.FC = () => {
                           </svg>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-green-900 dark:text-green-300">
-                              Équipement sélectionné depuis Jira
+                              Équipement sélectionné
                             </p>
                             <div className="mt-2 space-y-1">
                               {watch(`equipments.${index}.serialNumber`) && (
@@ -471,93 +411,40 @@ const AllocationFormModal: React.FC = () => {
                                   ✓ ID interne: <strong>{watch(`equipments.${index}.internalId`)}</strong>
                                 </p>
                               )}
-                              {watch(`equipments.${index}.equipmentId`) && (
-                                <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
-                                  ℹ️ Cet équipement existe déjà dans le système et a été automatiquement lié.
-                                </p>
-                              )}
                             </div>
                           </div>
+                          {/* Bouton pour désélectionner - Optionnel mais pratique */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setValue(`equipments.${index}.equipmentId`, '');
+                              setValue(`equipments.${index}.serialNumber`, '');
+                              setValue(`equipments.${index}.internalId`, '');
+                              setValue(`equipments.${index}.type`, '');
+                              setValue(`equipments.${index}.brand`, '');
+                              setValue(`equipments.${index}.model`, '');
+                            }}
+                            className="text-xs text-red-500 hover:text-red-700 underline"
+                          >
+                            Retirer
+                          </button>
                         </div>
                       </div>
-                    )}
-                  </div>
-
-                  {/* OU Sélection équipement disponible depuis MongoDB */}
-                  <div className="sm:col-span-2">
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-zinc-300 dark:border-zinc-700"></div>
-                      </div>
-                      <div className="relative flex justify-center text-xs">
-                        <span className="px-2 bg-white dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400">
-                          OU
-                        </span>
-                      </div>
-                    </div>
-                    <label className="block text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2 mt-3">
-                      Équipement disponible dans le système *
-                    </label>
-                    <select
-                      {...register(`equipments.${index}.equipmentId`)}
-                      onChange={(e) => {
-                        handleEquipmentSelect(index, e.target.value);
-                        // Réinitialiser la sélection Jira si un équipement MongoDB est sélectionné
-                        if (e.target.value) {
-                          const newSelectedJiraAssets = { ...selectedJiraAssets };
-                          delete newSelectedJiraAssets[index];
-                          setSelectedJiraAssets(newSelectedJiraAssets);
-                        }
-                      }}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Sélectionner un équipement existant</option>
-                      {isLoadingEquipment ? (
-                        <option>Chargement...</option>
-                      ) : (
-                        availableEquipment?.map((eq) => (
-                          <option key={eq._id} value={eq._id}>
-                            {equipmentTypeLabels[eq.type] || eq.type} - {eq.brand} {eq.model} ({eq.serialNumber})
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    {errors.equipments?.[index]?.equipmentId && (
-                      <p className="mt-1 text-xs sm:text-sm text-red-600 dark:text-red-400">
-                        {errors.equipments[index]?.equipmentId?.message as string}
-                      </p>
-                    )}
-                    {!watch(`equipments.${index}.equipmentId`) && !watch(`equipments.${index}.serialNumber`) && (
-                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                        <p className="text-xs text-blue-800 dark:text-blue-300">
-                          💡 <strong>Astuce:</strong> Recherchez un équipement depuis Jira pour remplir automatiquement les champs, ou sélectionnez un équipement existant dans le système.
-                        </p>
-                      </div>
-                    )}
-                    {errors.equipments?.[index]?.serialNumber && (
-                      <p className="mt-1 text-xs sm:text-sm text-red-600 dark:text-red-400">
-                        {errors.equipments[index]?.serialNumber?.message as string}
-                      </p>
-                    )}
-                    {errors.equipments?.[index]?.equipmentId && (
-                      <p className="mt-1 text-xs sm:text-sm text-red-600 dark:text-red-400">
-                        {errors.equipments[index]?.equipmentId?.message as string}
-                      </p>
                     )}
                   </div>
 
                   {/* Type */}
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Type {selectedJiraAssets[index] && <span className="text-green-600 dark:text-green-400">✓</span>}
+                      Type {watch(`equipments.${index}.equipmentId`) && <span className="text-green-600 dark:text-green-400">✓</span>}
                     </label>
                     <input
                       type="text"
                       {...register(`equipments.${index}.type`)}
                       placeholder="Sélectionnez un équipement pour remplir automatiquement"
-                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border ${selectedJiraAssets[index] || watch(`equipments.${index}.equipmentId`)
-                          ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
-                          : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border ${watch(`equipments.${index}.equipmentId`)
+                        ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
+                        : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
                         } text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       readOnly
                     />
@@ -566,15 +453,15 @@ const AllocationFormModal: React.FC = () => {
                   {/* Numéro de série */}
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Numéro de série {selectedJiraAssets[index] && <span className="text-green-600 dark:text-green-400">✓</span>}
+                      Numéro de série {watch(`equipments.${index}.equipmentId`) && <span className="text-green-600 dark:text-green-400">✓</span>}
                     </label>
                     <input
                       type="text"
                       {...register(`equipments.${index}.serialNumber`)}
                       placeholder="Sélectionnez un équipement pour remplir automatiquement"
-                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border font-mono ${selectedJiraAssets[index] || watch(`equipments.${index}.equipmentId`)
-                          ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
-                          : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border font-mono ${watch(`equipments.${index}.equipmentId`)
+                        ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
+                        : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
                         } text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       readOnly
                     />
@@ -583,15 +470,15 @@ const AllocationFormModal: React.FC = () => {
                   {/* Numéro interne */}
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Numéro interne {selectedJiraAssets[index] && <span className="text-green-600 dark:text-green-400">✓</span>}
+                      Numéro interne {watch(`equipments.${index}.equipmentId`) && <span className="text-green-600 dark:text-green-400">✓</span>}
                     </label>
                     <input
                       type="text"
                       {...register(`equipments.${index}.internalId`)}
                       placeholder="Ex: PI-1234"
-                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border ${selectedJiraAssets[index] && watch(`equipments.${index}.internalId`)
-                          ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
-                          : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border ${watch(`equipments.${index}.internalId`) && watch(`equipments.${index}.equipmentId`)
+                        ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10'
+                        : 'border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800'
                         } text-zinc-900 dark:text-zinc-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     />
                   </div>
