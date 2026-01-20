@@ -49,6 +49,18 @@ export const useEmployee = (id: string | undefined) => {
 };
 
 /**
+ * Hook pour obtenir les documents d'un employé
+ */
+export const useEmployeeDocuments = (id: string | undefined) => {
+  return useQuery({
+    queryKey: ['employees', id, 'documents'],
+    queryFn: () => employeesApi.getDocuments(id!),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+/**
  * Hook pour synchroniser les employés depuis Office 365
  */
 export const useSyncEmployees = () => {

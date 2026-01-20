@@ -6,6 +6,7 @@ import {
   EmployeeStats,
   SyncResponse,
   SyncPhotosResponse,
+  EmployeeDocument,
 } from '../types/employee';
 
 /**
@@ -43,6 +44,14 @@ export const employeesApi = {
    */
   getById: async (id: string): Promise<Employee> => {
     const response = await axiosInstance.get<Employee>(`/employees/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Obtenir les documents d'un employé
+   */
+  getDocuments: async (id: string): Promise<EmployeeDocument[]> => {
+    const response = await axiosInstance.get<EmployeeDocument[]>(`/employees/${id}/documents`);
     return response.data;
   },
 

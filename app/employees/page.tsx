@@ -10,6 +10,7 @@ import EmployeeCard from '../components/employees/EmployeeCard';
 import EmployeeStats from '../components/employees/EmployeeStats';
 import SyncResultModal from '../components/employees/SyncResultModal';
 import EmployeeDetailsModal from '../components/employees/EmployeeDetailsModal';
+import DocumentPreviewModal from '../components/employees/DocumentPreviewModal';
 import AllocationFormModal from '../components/allocations/AllocationFormModal';
 import { useAllocationFormStore } from '../stores/allocationFormStore';
 import { useRouter } from 'next/navigation';
@@ -33,7 +34,11 @@ export default function EmployeesPage() {
   const [photoSyncError, setPhotoSyncError] = useState<Error | null>(null);
 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+
   const [selectedEmployeeDetails, setSelectedEmployeeDetails] = useState<Employee | null>(null);
+
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [selectedDocumentEmployee, setSelectedDocumentEmployee] = useState<Employee | null>(null);
 
   const handleSync = async () => {
     try {
@@ -102,6 +107,16 @@ export default function EmployeesPage() {
   const handleCloseDetailsModal = () => {
     setShowDetailsModal(false);
     setSelectedEmployeeDetails(null);
+  };
+
+  const handleViewDocuments = (employee: Employee) => {
+    setSelectedDocumentEmployee(employee);
+    setShowDocumentModal(true);
+  };
+
+  const handleCloseDocumentModal = () => {
+    setShowDocumentModal(false);
+    setSelectedDocumentEmployee(null);
   };
 
   const { openModal: openAllocationModal } = useAllocationFormStore();
@@ -211,6 +226,7 @@ export default function EmployeesPage() {
                     showActions
                     onDeactivate={handleDeactivate}
                     onViewDetails={handleViewDetails}
+                    onViewDocuments={handleViewDocuments}
                     onAllocateEquipment={handleAllocateEquipment}
                   />
                 ))}
@@ -280,6 +296,14 @@ export default function EmployeesPage() {
             isOpen={showDetailsModal}
             onClose={handleCloseDetailsModal}
             employee={selectedEmployeeDetails}
+          />
+
+          {/* Modal de prévisualisation des documents */}
+          <DocumentPreviewModal
+            isOpen={showDocumentModal}
+            onClose={handleCloseDocumentModal}
+            documents={selectedDocumentEmployee?.documents || []}
+            employeeName={selectedDocumentEmployee?.displayName || ''}
           />
 
           {/* Modal de formulaire d'allocation */}

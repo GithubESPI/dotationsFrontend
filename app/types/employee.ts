@@ -1,5 +1,21 @@
 import { z } from 'zod';
 
+// Schéma pour les documents
+export const EmployeeDocumentSchema = z.object({
+  _id: z.string(),
+  documentType: z.string(), // "dotation" | "restitution"
+  allocationId: z.string().optional(),
+  fileId: z.string().optional(),
+  filename: z.string().optional(),
+  mimeType: z.string().optional(),
+  storageUrl: z.string().optional(),
+  url: z.string().optional(), // Adding url as it's returned by the backend
+  createdAt: z.string().optional(),
+  fileSize: z.number().optional(),
+});
+
+export type EmployeeDocument = z.infer<typeof EmployeeDocumentSchema>;
+
 // Schéma Zod pour un employé
 export const EmployeeSchema = z.object({
   _id: z.string(),
@@ -46,6 +62,7 @@ export const EmployeeSchema = z.object({
   lastSync: z.string().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
+  documents: z.array(EmployeeDocumentSchema).optional(),
 });
 
 export type Employee = z.infer<typeof EmployeeSchema>;
