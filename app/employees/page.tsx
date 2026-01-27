@@ -304,6 +304,7 @@ export default function EmployeesPage() {
             onClose={handleCloseDocumentModal}
             documents={selectedDocumentEmployee?.documents || []}
             employeeName={selectedDocumentEmployee?.displayName || ''}
+            employeeId={selectedDocumentEmployee?._id || ''}
           />
 
           {/* Modal de formulaire d'allocation */}

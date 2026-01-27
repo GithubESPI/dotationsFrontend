@@ -11,8 +11,73 @@ import {
  */
 export const useEquipmentSearch = (params: SearchEquipmentParams) => {
   return useQuery({
-    queryKey: ['equipment', 'search', params],
-    queryFn: () => equipmentApi.search(params),
+    queryKey: ['equipment', 'all', 'filtered', params],
+    queryFn: () => equipmentApi.getAll(),
+    select: (allEquipment) => {
+      let filtered = [...allEquipment];
+
+      // 1. Filtrage par Recherche (Texte global)
+      if (params.query) {
+        const lowerQuery = params.query.toLowerCase();
+        filtered = filtered.filter(item =>
+          item.brand.toLowerCase().includes(lowerQuery) ||
+          item.model.toLowerCase().includes(lowerQuery) ||
+          item.serialNumber.toLowerCase().includes(lowerQuery) ||
+          (item.jiraAttributes && Object.values(item.jiraAttributes).some(v => String(v).toLowerCase().includes(lowerQuery)))
+        );
+      }
+
+      // 2. Filtrage par Statut
+      if (params.status) {
+        filtered = filtered.filter(item => {
+          const status = item.status?.toUpperCase() || '';
+          const jiraStatus = (item.jiraAttributes?.['Status'] as string)?.toUpperCase() || '';
+          const paramStatus = params.status?.toUpperCase();
+
+          return status === paramStatus || jiraStatus === paramStatus;
+        });
+      }
+
+      // 3. Filtrage par Localisation
+      if (params.location) {
+        const lowerLoc = params.location.toLowerCase();
+        filtered = filtered.filter(item => {
+          const loc = item.location?.toLowerCase() || '';
+          // Vérifier aussi dans les attributs Jira car c'est souvent là que se trouve l'info
+          const jiraLoc = (item.jiraAttributes?.['Localisation'] as string)?.toLowerCase() || '';
+          return loc.includes(lowerLoc) || jiraLoc.includes(lowerLoc);
+        });
+      }
+
+      // 4. Filtrage par Type
+      if (params.type) {
+        filtered = filtered.filter(item => item.type === params.type);
+      }
+
+      // 5. Filtrage par Marque (si utilisé spécifiquement)
+      if (params.brand) {
+        const lowerBrand = params.brand.toLowerCase();
+        filtered = filtered.filter(item => item.brand.toLowerCase().includes(lowerBrand));
+      }
+
+      // 6. Pagination
+      const total = filtered.length;
+      const limit = params.limit || 20;
+      const page = params.page || 1;
+      const totalPages = Math.ceil(total / limit);
+      const start = (page - 1) * limit;
+      const paginatedData = filtered.slice(start, start + limit);
+
+      return {
+        data: paginatedData,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages
+        }
+      };
+    },
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };

@@ -5,6 +5,8 @@ import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useEquipmentSearch } from '../hooks/useEquipment';
 import { useEquipmentSearchStore } from '../stores/equipmentSearchStore';
 import EquipmentFormModal from '../components/equipment/EquipmentFormModal';
+import EquipmentFilters from '../components/equipment/EquipmentFilters';
+
 import { Equipment } from '../types/equipment';
 import { useSyncLaptops } from '../hooks/useJiraAsset';
 import SyncResultModal from '../components/equipment/SyncResultModal';
@@ -73,12 +75,32 @@ export default function EquipmentPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const getEquipmentDisplayName = (equipment: Equipment) => {
+    const attrs = equipment.jiraAttributes || {};
+
+    // Essayer de trouver des valeurs plus précises dans les attributs
+    // Priorité aux attributs qui contiennent probablement le vrai modèle
+    const attrModel = attrs['Modèle'] || attrs['Model'] || attrs['Product Name'] || attrs['Name'];
+    const attrBrand = attrs['Marque'] || attrs['Brand'] || attrs['Manufacturer'] || attrs['Constructeur'];
+
+    let brand = attrBrand || equipment.brand;
+    let model = attrModel || equipment.model;
+
+    // Nettoyage spécifique si nécessaire
+    if (brand === 'Inconnu') brand = '';
+    if (model === 'Inconnu') model = '';
+
+    const fullName = `${brand} ${model}`.trim();
+    return fullName || 'Équipement Inconnu';
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-black dark:via-zinc-900 dark:to-black">
         <div className="container mx-auto px-4 py-8 md:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* ... Header Content ... */}
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-black dark:text-zinc-50 mb-2">
                 Gestion des Équipements
@@ -102,14 +124,17 @@ export default function EquipmentPage() {
                 </svg>
                 {syncMutation.isPending ? 'Synchronisation...' : 'Synchroniser Jira'}
               </button>
-              <button
-                onClick={handleCreateEquipment}
-                className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg"
+              <a
+                href="http://localhost:3001/dashboard"
+                className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg flex items-center gap-2"
               >
-                + Créer un équipement
-              </button>
+                🏠 Home
+              </a>
             </div>
           </div>
+
+          {/* Filters */}
+          <EquipmentFilters />
 
           {/* Résultats */}
           {isLoading ? (
@@ -157,21 +182,26 @@ export default function EquipmentPage() {
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-black dark:text-zinc-50">
-                          {equipment.brand} {equipment.model}
+                          {getEquipmentDisplayName(equipment)}
                         </h3>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">
                           {equipment.serialNumber}
                         </p>
                       </div>
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${equipment.status === 'DISPONIBLE'
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                          : equipment.status === 'AFFECTE'
-                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
-                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300'
-                          }`}
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${(() => {
+                          // Récupérer le statut réel (Jira ou fallback)
+                          const rawStatus = equipment.jiraAttributes?.['Status'] || equipment.status || '';
+                          const status = String(rawStatus).toUpperCase();
+
+                          if (status === 'DISPONIBLE' || status === 'EN STOCK') return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
+                          if (status.includes('AFFECT') || status === 'ASSIGNED') return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
+                          if (status.includes('REPARATION') || status.includes('BROKEN')) return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300';
+                          if (status.includes('LOST') || status === 'PERDU') return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300';
+                          return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300';
+                        })()}`}
                       >
-                        {equipment.status}
+                        {equipment.jiraAttributes?.['Status'] || equipment.status?.toUpperCase()}
                       </span>
                     </div>
                     <div className="space-y-2">
@@ -179,6 +209,31 @@ export default function EquipmentPage() {
                         <span className="font-medium">Type:</span>
                         <span>{equipment.type}</span>
                       </div>
+
+                      {/* Affichage de l'utilisateur si assigné */}
+                      {(equipment.status?.toUpperCase() === 'AFFECTE' || equipment.status?.toUpperCase() === 'AFFECTÉ') && (
+                        <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                          <span className="font-medium">Utilisateur:</span>
+                          <span>
+                            {equipment.jiraAttributes?.['Utilisateur'] ||
+                              equipment.jiraAttributes?.['User'] ||
+                              equipment.jiraAttributes?.['user'] ||
+                              equipment.currentUserId ||
+                              'Non spécifié'}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Affichage de la localisation */}
+                      {(equipment.location || equipment.jiraAttributes?.['Localisation']) && (
+                        <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400">
+                          <span className="font-medium">Lieu:</span>
+                          <span>
+                            {equipment.jiraAttributes?.['Localisation'] || equipment.location}
+                          </span>
+                        </div>
+                      )}
+
                       {equipment.internalId && (
                         <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                           <span className="font-medium">ID interne:</span>

@@ -258,7 +258,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={equipmentId ? 'Modifier l\'équipement' : 'Créer un équipement'}
+      title={equipmentId ? 'Détails de l\'équipement' : 'Créer un équipement'}
       size="lg"
     >
       {isLoadingEquipment ? (
@@ -270,7 +270,81 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
             </div>
           </div>
         </div>
+      ) : equipmentId && existingEquipment ? (
+        /* MODE DETAILS (READ-ONLY) */
+        <div className="space-y-6">
+          <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">🧩</span>
+              <h3 className="text-lg font-semibold text-black dark:text-zinc-50">
+                Détails techniques (Jira)
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
+              {/* On affiche d'abord les infos principales mappées */}
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">TYPE</span>
+                <span className="text-sm font-medium text-black dark:text-zinc-200">{existingEquipment.type}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">STATUT</span>
+                <span className={`text-sm font-medium px-2 py-0.5 rounded-full w-fit ${existingEquipment.status === 'DISPONIBLE' ? 'bg-green-100 text-green-800' :
+                    existingEquipment.status?.includes('AFFECT') ? 'bg-blue-100 text-blue-800' :
+                      'bg-zinc-100 text-zinc-800'
+                  }`}>
+                  {existingEquipment.jiraAttributes?.['Status'] || existingEquipment.status}
+                </span>
+              </div>
+
+              {/* Affichage de tous les attributs Jira dynamiquement */}
+              {existingEquipment.jiraAttributes && Object.entries(existingEquipment.jiraAttributes).map(([key, value]) => {
+                // On filtre status car affiché au dessus, mais on garde le reste
+                if (key === 'Status') return null;
+
+                let displayValue = String(value);
+                if (Array.isArray(value)) displayValue = value.join(', ');
+                if (typeof value === 'object' && value !== null) displayValue = JSON.stringify(value);
+
+                return (
+                  <div key={key} className="flex flex-col">
+                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">{key}</span>
+                    <span className="text-sm font-medium text-black dark:text-zinc-200 break-words">{displayValue}</span>
+                  </div>
+                );
+              })}
+
+              {/* Fallback si pas d'attributs Jira mais des champs standard */}
+              {!existingEquipment.jiraAttributes && (
+                <>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">MARQUE</span>
+                    <span className="text-sm font-medium text-black dark:text-zinc-200">{existingEquipment.brand}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">MODÈLE</span>
+                    <span className="text-sm font-medium text-black dark:text-zinc-200">{existingEquipment.model}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">N/S</span>
+                    <span className="text-sm font-medium text-black dark:text-zinc-200">{existingEquipment.serialNumber}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-zinc-200 dark:border-zinc-700">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-700 text-white hover:bg-zinc-800 dark:hover:bg-zinc-600 transition-colors font-medium"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
       ) : (
+        /* MODE CREATION (FORMULAIRE STANDARD) */
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Sélecteur Jira Asset - Seulement en mode création */}
           {!equipmentId && (
@@ -314,15 +388,6 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Indicateur de mode édition */}
-          {equipmentId && existingEquipment && (
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-900 dark:text-blue-300">
-                ✏️ Mode édition - Modification de l'équipement existant
-              </p>
             </div>
           )}
 
@@ -467,57 +532,8 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
             </div>
           </div>
 
-          {/* Informations pré-remplies depuis Jira */}
-          {selectedJiraAsset && (watchedBrand || watchedModel || watchedSerialNumber) && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-300 mb-2">
-                📋 Informations pré-remplies depuis Jira
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-sm text-blue-800 dark:text-blue-200">
-                {watchedBrand && <div>Marque: <strong>{watchedBrand}</strong></div>}
-                {watchedModel && <div>Modèle: <strong>{watchedModel}</strong></div>}
-                {watchedSerialNumber && <div>N° série: <strong>{watchedSerialNumber}</strong></div>}
-              </div>
-              <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">
-                Vous pouvez modifier ces valeurs si nécessaire
-              </p>
-            </div>
-          )}
-
-          {/* Attributs dynamiques Jira */}
-          {Object.keys(watch('jiraAttributes') || {}).length > 0 && (
-            <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-              <h3 className="text-md font-medium text-black dark:text-zinc-50 flex items-center gap-2">
-                <span>🧩</span> Détails techniques (Jira)
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                {Object.entries(watch('jiraAttributes') || {}).map(([key, value]) => {
-                  // Ignorer les attributs déjà mappés dans les champs principaux pour éviter la duplication visuelle
-                  const lowerKey = key.toLowerCase();
-                  if (
-                    lowerKey.includes('serial') || lowerKey.includes('série') ||
-                    lowerKey.includes('brand') || lowerKey.includes('marque') || lowerKey.includes('constructeur') ||
-                    lowerKey.includes('model') || lowerKey.includes('modèle') ||
-                    lowerKey.includes('status') || lowerKey.includes('statut')
-                  ) {
-                    return null;
-                  }
-
-                  let displayValue = String(value);
-                  if (Array.isArray(value)) displayValue = value.join(', ');
-                  if (typeof value === 'object' && value !== null) displayValue = JSON.stringify(value);
-
-                  return (
-                    <div key={key} className="flex flex-col">
-                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{key}</span>
-                      <span className="text-sm text-black dark:text-zinc-200 font-medium truncate" title={displayValue}>{displayValue}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Attributs dynamiques Jira (pour création seulement si affiché, mais généralement masqué) */}
+          {/* ... on garde simplifié pour la creation ... */}
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-700">
@@ -534,10 +550,8 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
               className="px-6 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting || createEquipment.isPending || updateEquipment.isPending
-                ? 'Enregistrement...'
-                : equipmentId
-                  ? 'Modifier'
-                  : 'Créer'}
+                ? 'Création...'
+                : 'Créer'}
             </button>
           </div>
         </form>
