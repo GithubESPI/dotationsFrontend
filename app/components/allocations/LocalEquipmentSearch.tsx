@@ -10,6 +10,7 @@ interface LocalEquipmentSearchProps {
     placeholder?: string;
     className?: string;
     excludeIds?: string[];
+    typeFilter?: string | null;
 }
 
 const LocalEquipmentSearch: React.FC<LocalEquipmentSearchProps> = ({
@@ -17,6 +18,7 @@ const LocalEquipmentSearch: React.FC<LocalEquipmentSearchProps> = ({
     placeholder = 'Tapez pour rechercher (Nom de l\'équipement, N/S, Marque, Localisation...)',
     className = '',
     excludeIds = [],
+    typeFilter = null,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -58,6 +60,27 @@ const LocalEquipmentSearch: React.FC<LocalEquipmentSearchProps> = ({
         // Exclure les IDs spécifiés
         if (excludeIds.length > 0) {
             filtered = filtered.filter(eq => !excludeIds.includes(eq._id));
+        }
+
+        // Filtrer par type si spécifié
+        if (typeFilter) {
+            filtered = filtered.filter(eq => {
+                if (!eq.type) return false;
+                const eqType = eq.type.toUpperCase();
+                const filter = typeFilter.toUpperCase();
+
+                // Correspondance exacte
+                if (eqType === filter) return true;
+
+                // Correspondance mappée (si le DB a "ecran" et le filtre est "ECRAN")
+                if (filter === 'ECRAN' && (eqType === 'MONITOR' || eqType.includes('ECRAN'))) return true;
+                if (filter === 'PC_PORTABLE' && (eqType.includes('LAPTOP') || eqType === 'PORTABLE')) return true;
+                if (filter === 'PC_FIXE' && (eqType.includes('DESKTOP') || eqType === 'FIXE')) return true;
+                if (filter === 'TABLETTE' && eqType.includes('TABLET')) return true;
+                if (filter === 'MOBILE' && (eqType === 'PHONE' || eqType.includes('MOBILE'))) return true;
+
+                return false;
+            });
         }
 
         if (debouncedQuery.trim()) {
@@ -107,7 +130,7 @@ const LocalEquipmentSearch: React.FC<LocalEquipmentSearchProps> = ({
 
         // Limiter les résultats
         return filtered.slice(0, 50);
-    }, [allEquipment, debouncedQuery, excludeIds]);
+    }, [allEquipment, debouncedQuery, excludeIds, typeFilter]);
 
     // Gérer les touches du clavier
     useEffect(() => {

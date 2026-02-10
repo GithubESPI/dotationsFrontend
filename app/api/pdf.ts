@@ -4,8 +4,8 @@ export const pdfApi = {
     /**
      * Générer le PDF de dotation pour une allocation
      */
-    generateAllocationPDF: async (allocationId: string): Promise<any> => {
-        const response = await axiosInstance.post(`/pdf/allocation/${allocationId}`);
+    generateAllocationPDF: async (allocationId: string, signatureData?: any): Promise<any> => {
+        const response = await axiosInstance.post(`/pdf/allocation/${allocationId}`, signatureData ? { signatureData } : {});
         return response.data;
     },
 

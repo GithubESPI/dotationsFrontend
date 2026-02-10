@@ -8,7 +8,8 @@ export const useGenerateAllocationPDF = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (allocationId: string) => pdfApi.generateAllocationPDF(allocationId),
+        mutationFn: ({ allocationId, signatureData }: { allocationId: string, signatureData?: any }) =>
+            pdfApi.generateAllocationPDF(allocationId, signatureData),
         onSuccess: () => {
             // Invalider les allocations pour mettre à jour le statut du document si nécessaire (non implémenté ici mais bonne pratique)
             queryClient.invalidateQueries({ queryKey: ['allocations'] });

@@ -46,6 +46,7 @@ export const CreateAllocationSchema = z.object({
   additionalSoftware: z.array(z.string()).optional(),
   services: z.array(z.string()).optional(),
   notes: z.string().optional(),
+  status: z.string().optional(),
 });
 
 export type CreateAllocation = z.infer<typeof CreateAllocationSchema>;

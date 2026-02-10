@@ -2,7 +2,7 @@
 import React from 'react';
 import Modal from '../ui/Modal';
 import { Employee } from '../../types/employee';
-import { useAllocationsByUserId } from '../../hooks/useAllocations';
+import { useAllocationsByUserId, useAllocationsSearch } from '../../hooks/useAllocations';
 import ReturnFormModal from '../returns/ReturnFormModal';
 import { useState } from 'react';
 import { Allocation } from '../../types/allocation';
@@ -29,7 +29,14 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
   // Récupérer les documents séparément via le nouveau hook
   const { data: documents } = useEmployeeDocuments(employee?._id);
 
-  const { data: allocations, isLoading: isLoadingAllocations } = useAllocationsByUserId(employee?._id);
+  // Utiliser la recherche pour obtenir toutes les allocations (active et terminées) sans limitation cachée
+  // On demande une limite élevée pour être sûr de tout avoir
+  const { data: searchResult, isLoading: isLoadingAllocations } = useAllocationsSearch({
+    userId: employee?._id,
+    page: 1,
+    limit: 100
+  });
+  const allocations = searchResult?.data || [];
 
   if (!employee) return null;
 
