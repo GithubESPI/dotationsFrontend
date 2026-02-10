@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 
 // Configuration de base
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-dodation.groupe-espi.fr';
 
 // Créer l'instance axios
 const axiosInstance: AxiosInstance = axios.create({
@@ -46,7 +46,7 @@ axiosInstance.interceptors.response.use(
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
         localStorage.removeItem('azure_access_token');
-        
+
         // Rediriger vers la page de connexion
         window.location.href = '/login';
       }
