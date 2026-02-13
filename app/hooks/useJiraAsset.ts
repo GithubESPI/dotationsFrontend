@@ -57,25 +57,34 @@ export const useJiraObjectTypeAssets = (
 export const useSearchJiraAssets = (params: SearchJiraAssetsParams, enabled: boolean = true) => {
   const { setSearchResults, setLoading, setError } = useJiraAssetStore();
 
-  return useQuery({
+  const query = useQuery<JiraAssetObject[], Error>({
     queryKey: ['jira-asset', 'search', params],
     queryFn: () => jiraAssetApi.searchAssets(params),
     enabled: enabled && !!params.objectTypeId,
     staleTime: 1000 * 60 * 2, // 2 minutes
     retry: 1,
-    onSuccess: (data) => {
-      setSearchResults(data);
+  });
+
+  React.useEffect(() => {
+    if (query.data) {
+      setSearchResults(query.data);
       setLoading(false);
       setError(null);
-    },
-    onError: (error: any) => {
-      setError(error.message || 'Erreur lors de la recherche');
+    }
+  }, [query.data, setSearchResults, setLoading, setError]);
+
+  React.useEffect(() => {
+    if (query.error) {
+      setError((query.error as Error).message || 'Erreur lors de la recherche');
       setLoading(false);
-    },
-    onSettled: () => {
-      setLoading(false);
-    },
-  });
+    }
+  }, [query.error, setError, setLoading]);
+
+  React.useEffect(() => {
+    setLoading(query.isLoading);
+  }, [query.isLoading, setLoading]);
+
+  return query;
 };
 
 /**
@@ -105,11 +114,11 @@ export const useSyncLaptops = () => {
       if (data.attributeMapping) {
         setAttributeMapping(data.attributeMapping);
       }
-      
+
       // Invalider les caches pertinents
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       queryClient.invalidateQueries({ queryKey: ['jira-asset'] });
-      
+
       setError(null);
     },
     onError: (error: any) => {
@@ -145,7 +154,7 @@ export const useSyncSchema = () => {
       // Invalider les caches pertinents
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
       queryClient.invalidateQueries({ queryKey: ['jira-asset'] });
-      
+
       setError(null);
     },
     onError: (error: any) => {
