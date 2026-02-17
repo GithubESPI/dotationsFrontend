@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Schéma pour un attribut Jira Asset
+// Schéma pour un attribut Jira Asset 
 export const JiraAssetAttributeSchema = z.object({
   objectTypeAttributeId: z.string(),
   objectAttributeValues: z.array(
