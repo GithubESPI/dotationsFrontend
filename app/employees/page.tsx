@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { authService, User } from '../services/auth.service';
 import { useEmployeeSearchStore } from '../stores/employeeSearchStore';
 import { useEmployeesSearch, useSyncEmployees, useSyncEmployeePhotos, useDeactivateEmployee } from '../hooks/useEmployees';
 import SearchBar from '../components/employees/SearchBar';
@@ -39,6 +40,17 @@ export default function EmployeesPage() {
 
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [selectedDocumentEmployee, setSelectedDocumentEmployee] = useState<Employee | null>(null);
+
+
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Récupérer l'utilisateur courant pour obtenir ses rôles (ex: DSIT_ADMIN)
+    if (typeof window !== 'undefined') {
+      setCurrentUser(authService.getCurrentUser());
+    }
+  }, []);
 
   const handleSync = async () => {
     try {
@@ -224,7 +236,7 @@ export default function EmployeesPage() {
                     employee={employee}
                     onSelect={setSelectedEmployee}
                     showActions
-                    onDeactivate={handleDeactivate}
+                    onDeactivate={currentUser?.roles?.includes('DSIT_ADMIN') ? handleDeactivate : undefined}
                     onViewDetails={handleViewDetails}
                     onViewDocuments={handleViewDocuments}
                     onAllocateEquipment={handleAllocateEquipment}
