@@ -28,12 +28,12 @@ const equipmentTypeLabels: Record<string, string> = {
 };
 
 const equipmentStatusLabels: Record<string, string> = {
-  DISPONIBLE: 'Disponible',
+  EN_STOCK: 'En stock',
   AFFECTE: 'Affecté',
-  EN_REPARATION: 'En réparation',
+  EN_REPARATION: 'En réparation/intervention',
   RESTITUE: 'Restitué',
   PERDU: 'Perdu',
-  DETRUIT: 'Détruit',
+  DETRUIT: 'Détruit/Rebut',
 };
 
 const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
@@ -68,7 +68,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
       serialNumber: '',
       imei: '',
       phoneLine: '',
-      status: 'DISPONIBLE' as const,
+      status: 'EN_STOCK' as const,
       currentUserId: '',
       location: '',
       additionalSoftwares: [],
@@ -125,7 +125,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
         serialNumber: '',
         imei: '',
         phoneLine: '',
-        status: 'DISPONIBLE',
+        status: 'EN_STOCK',
         currentUserId: '',
         location: '',
         additionalSoftwares: [],
@@ -152,16 +152,16 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
 
   // Mapper le statut depuis Jira vers notre enum
   const mapJiraStatusToEquipmentStatus = (jiraStatus?: string): string => {
-    if (!jiraStatus) return 'DISPONIBLE';
+    if (!jiraStatus) return 'EN_STOCK';
 
     const lowerStatus = jiraStatus.toLowerCase();
-    if (lowerStatus.includes('disponible') || lowerStatus.includes('available')) return 'DISPONIBLE';
-    if (lowerStatus.includes('affecté') || lowerStatus.includes('assigned')) return 'AFFECTE';
-    if (lowerStatus.includes('réparation') || lowerStatus.includes('repair') || lowerStatus.includes('maintenance')) return 'EN_REPARATION';
+    if (lowerStatus.includes('en stock') || lowerStatus.includes('disponible') || lowerStatus.includes('available')) return 'EN_STOCK';
+    if (lowerStatus.includes('affecté') || lowerStatus.includes('affecte') || lowerStatus.includes('assigned')) return 'AFFECTE';
+    if (lowerStatus.includes('intervention') || lowerStatus.includes('réparation') || lowerStatus.includes('repair') || lowerStatus.includes('maintenance')) return 'EN_REPARATION';
     if (lowerStatus.includes('restitue') || lowerStatus.includes('returned')) return 'RESTITUE';
     if (lowerStatus.includes('perdu') || lowerStatus.includes('lost')) return 'PERDU';
-    if (lowerStatus.includes('détruit') || lowerStatus.includes('destroyed')) return 'DETRUIT';
-    return 'DISPONIBLE';
+    if (lowerStatus.includes('rebut') || lowerStatus.includes('détruit') || lowerStatus.includes('destroyed')) return 'DETRUIT';
+    return 'EN_STOCK';
   };
 
   const handleJiraAssetSelect = async (asset: JiraAssetObject, formData: any) => {
@@ -289,11 +289,23 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">STATUT</span>
-                <span className={`text-sm font-medium px-2 py-0.5 rounded-full w-fit ${existingEquipment.status === 'DISPONIBLE' ? 'bg-green-100 text-green-800' :
+                <span className={`text-sm font-medium px-2 py-0.5 rounded-full w-fit ${
+                    existingEquipment.status === 'EN_STOCK' ? 'bg-green-100 text-green-800' :
                     existingEquipment.status?.includes('AFFECT') ? 'bg-blue-100 text-blue-800' :
                       'bg-zinc-100 text-zinc-800'
                   }`}>
-                  {existingEquipment.jiraAttributes?.['Status'] || existingEquipment.status}
+                  {(() => {
+                    const rawStatus = existingEquipment.jiraAttributes?.['Status'] || existingEquipment.status;
+                    if (
+                      rawStatus && rawStatus.toUpperCase() === 'DISPONIBLE' &&
+                      (existingEquipment.type === 'PC_PORTABLE' || 
+                       existingEquipment.jiraAttributes?.['Type'] === 'Laptop' || 
+                       existingEquipment.jiraAttributes?.['Type'] === 'Chromebook')
+                    ) {
+                      return 'En stock';
+                    }
+                    return rawStatus;
+                  })()}
                 </span>
               </div>
 

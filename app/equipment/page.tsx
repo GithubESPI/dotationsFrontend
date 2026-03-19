@@ -182,8 +182,13 @@ export default function EquipmentPage() {
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-black dark:text-zinc-50">
-                          {getEquipmentDisplayName(equipment)}
+                          {equipment.jiraAttributes?.['Name'] || getEquipmentDisplayName(equipment)}
                         </h3>
+                        {equipment.jiraAttributes?.['Name'] && (
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                            {getEquipmentDisplayName(equipment)}
+                          </p>
+                        )}
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">
                           {equipment.serialNumber}
                         </p>
@@ -194,14 +199,26 @@ export default function EquipmentPage() {
                           const rawStatus = equipment.jiraAttributes?.['Status'] || equipment.status || '';
                           const status = String(rawStatus).toUpperCase();
 
-                          if (status === 'DISPONIBLE' || status === 'EN STOCK') return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
+                          if (status === 'EN_STOCK' || status === 'EN STOCK') return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
                           if (status.includes('AFFECT') || status === 'ASSIGNED') return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
                           if (status.includes('REPARATION') || status.includes('BROKEN')) return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300';
                           if (status.includes('LOST') || status === 'PERDU') return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300';
                           return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300';
                         })()}`}
                       >
-                        {equipment.jiraAttributes?.['Status'] || equipment.status?.toUpperCase()}
+                        {(() => {
+                          const originalStatus = equipment.jiraAttributes?.['Status'] || equipment.status?.toUpperCase();
+                          // Si c'est un PC_PORTABLE, Laptop ou Chromebook, on affiche "En stock" au lieu de "Disponible"
+                          if (
+                            originalStatus === 'DISPONIBLE' &&
+                            (equipment.type === 'PC_PORTABLE' || 
+                             equipment.jiraAttributes?.['Type'] === 'Laptop' || 
+                             equipment.jiraAttributes?.['Type'] === 'Chromebook')
+                          ) {
+                            return 'En stock';
+                          }
+                          return originalStatus;
+                        })()}
                       </span>
                     </div>
                     <div className="space-y-2">
@@ -209,6 +226,14 @@ export default function EquipmentPage() {
                         <span className="font-medium">Type:</span>
                         <span>{equipment.type}</span>
                       </div>
+
+                      {/* Affichage du nom Jira si disponible */}
+                      {equipment.jiraAttributes?.['Name'] && (
+                        <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                          <span className="font-medium">Nom:</span>
+                          <span>{equipment.jiraAttributes['Name']}</span>
+                        </div>
+                      )}
 
                       {/* Affichage de l'utilisateur si assigné */}
                       {(equipment.status?.toUpperCase() === 'AFFECTE' || equipment.status?.toUpperCase() === 'AFFECTÉ') && (

@@ -15,7 +15,7 @@ export type EquipmentType = z.infer<typeof EquipmentTypeSchema>;
 
 // Enum pour le statut d'équipement
 export const EquipmentStatusSchema = z.enum([
-  'DISPONIBLE',
+  'EN_STOCK',
   'AFFECTE',
   'EN_REPARATION',
   'RESTITUE',
