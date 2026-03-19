@@ -125,7 +125,7 @@ export default function EquipmentPage() {
                 {syncMutation.isPending ? 'Synchronisation...' : 'Synchroniser Jira'}
               </button>
               <a
-                href="http://localhost:3001/dashboard"
+                href="/dashboard"
                 className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg flex items-center gap-2"
               >
                 🏠 Home
