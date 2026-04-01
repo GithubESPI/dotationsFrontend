@@ -13,6 +13,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSyncLaptops } from '../hooks/useJiraAsset';
 import SyncResultModal from '../components/equipment/SyncResultModal';
 import { SyncResponse } from '../types/jira-asset';
+import { useAllocationsSearch } from '../hooks/useAllocations';
+import { Activity } from '../components/dashboard/ActivityFeed';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -27,6 +29,9 @@ export default function DashboardPage() {
   const [syncResult, setSyncResult] = useState<SyncResponse | null>(null);
   const [syncError, setSyncError] = useState<Error | null>(null);
 
+  // Activité récente depuis les allocations
+  const { data: allocationsData, isLoading: allocationsLoading } = useAllocationsSearch({ page: 1, limit: 5 });
+
   const handleLogout = async () => {
     await logout();
     queryClient.clear();
@@ -35,6 +40,7 @@ export default function DashboardPage() {
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['user'] });
+    queryClient.invalidateQueries({ queryKey: ['allocations'] });
   };
 
   const handleSync = async () => {
@@ -161,30 +167,51 @@ export default function DashboardPage() {
     },
   ];
 
-  // Activités récentes (données de démonstration)
-  const recentActivities = [
-    {
-      id: '1',
-      title: 'Dotation approuvée',
-      description: 'Votre demande de dotation #1234 a été approuvée',
-      time: 'Il y a 2 heures',
-      type: 'success' as const,
-    },
-    {
-      id: '2',
-      title: 'Nouvelle demande',
-      description: 'Une nouvelle demande de dotation a été soumise',
-      time: 'Il y a 5 heures',
-      type: 'info' as const,
-    },
-    {
-      id: '3',
-      title: 'Document requis',
-      description: 'Un document supplémentaire est requis pour la demande #1235',
-      time: 'Il y a 1 jour',
-      type: 'warning' as const,
-    },
-  ];
+  // Formateur de date relatif
+  const formatTimeAgo = (dateString?: string) => {
+    if (!dateString) return 'Récemment';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'À l\'instant';
+    if (diffMins < 60) return `Il y a ${diffMins} min${diffMins > 1 ? 's' : ''}`;
+    if (diffHours < 24) return `Il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
+    if (diffDays === 1) return 'Hier';
+    return `Il y a ${diffDays} jours`;
+  };
+
+  // Transformation des allocations réelles en "Activity"
+  const recentActivities: Activity[] = (allocationsData?.data || []).slice(0, 5).map(alloc => {
+    let type: Activity['type'] = 'info';
+    let title = 'Nouvelle dotation';
+    let description = `Demande initiale pour ${alloc.userName}`;
+
+    if (alloc.status === 'TERMINEE') {
+      type = 'success';
+      title = 'Dotation terminée';
+      description = `Le matériel a été remis à ${alloc.userName} le ${new Date(alloc.deliveryDate || alloc.updatedAt || alloc.createdAt!).toLocaleDateString('fr-FR')}`;
+    } else if (alloc.status === 'ANNULEE') {
+      type = 'error';
+      title = 'Dotation annulée';
+      description = `La demande de ${alloc.userName} a été annulée.`;
+    } else if (alloc.status === 'EN_RETARD') {
+      type = 'warning';
+      title = 'Action requise';
+      description = `La dotation de ${alloc.userName} est en attente ou en retard.`;
+    }
+
+    return {
+      id: alloc._id,
+      title,
+      description,
+      time: formatTimeAgo(alloc.updatedAt || alloc.createdAt),
+      type,
+    };
+  });
 
   if (isLoading) {
     return (
@@ -299,8 +326,11 @@ export default function DashboardPage() {
           </div>
 
           {/* Activity Feed */}
-          <div className="mb-8">
-            <ActivityFeed activities={recentActivities} />
+          <div className="mb-8 relative z-10">
+            <ActivityFeed 
+              activities={recentActivities} 
+              isLoading={allocationsLoading} 
+            />
           </div>
 
           {/* Modal de résultat de synchronisation */}
