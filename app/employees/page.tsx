@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { authService, User } from '../services/auth.service';
 import { useEmployeeSearchStore } from '../stores/employeeSearchStore';
@@ -144,6 +145,16 @@ export default function EmployeesPage() {
           {/* Header */}
           <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 mb-4 transition-colors"
+                title="Retour à l'accueil"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour au tableau de bord
+              </Link>
               <h1 className="text-3xl md:text-4xl font-bold text-black dark:text-zinc-50 mb-2">
                 Gestion des Employés
               </h1>

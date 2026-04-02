@@ -30,6 +30,8 @@ export const EquipmentSchema = z.object({
   _id: z.string(),
   jiraAssetId: z.string().optional(),
   internalId: z.string().optional(),
+  objectTypeName: z.string().optional(),
+  isMissingSerialNumber: z.boolean().optional(),
   type: EquipmentTypeSchema,
   brand: z.string(),
   model: z.string(),
@@ -55,6 +57,7 @@ export const SearchEquipmentParamsSchema = z.object({
   brand: z.string().optional(),
   location: z.string().optional(),
   currentUserId: z.string().optional(),
+  onlyIncomplete: z.boolean().optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
 });

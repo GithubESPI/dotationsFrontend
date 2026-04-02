@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { useEquipmentSearch } from '../hooks/useEquipment';
 import { useEquipmentSearchStore } from '../stores/equipmentSearchStore';
@@ -8,9 +9,9 @@ import EquipmentFormModal from '../components/equipment/EquipmentFormModal';
 import EquipmentFilters from '../components/equipment/EquipmentFilters';
 
 import { Equipment } from '../types/equipment';
-import { useSyncLaptops } from '../hooks/useJiraAsset';
+import { useSyncAllEquipmentTypes } from '../hooks/useJiraAsset';
 import SyncResultModal from '../components/equipment/SyncResultModal';
-import { SyncResponse } from '../types/jira-asset';
+import { SyncAllEquipmentTypesResponse } from '../types/jira-asset';
 
 export default function EquipmentPage() {
   const { searchParams, setPage } = useEquipmentSearchStore();
@@ -19,9 +20,9 @@ export default function EquipmentPage() {
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
 
   // États pour la synchronisation Jira
-  const syncMutation = useSyncLaptops();
+  const syncMutation = useSyncAllEquipmentTypes();
   const [showSyncModal, setShowSyncModal] = useState(false);
-  const [syncResult, setSyncResult] = useState<SyncResponse | null>(null);
+  const [syncResult, setSyncResult] = useState<any>(null);
   const [syncError, setSyncError] = useState<Error | null>(null);
 
   const handleCreateEquipment = () => {
@@ -49,14 +50,23 @@ export default function EquipmentPage() {
       setSyncError(null);
       setSyncResult(null);
       setShowSyncModal(true);
-      // Synchroniser les laptops avec détection automatique des attributs
+      // Synchroniser TOUS les types d'équipements depuis Jira
       const result = await syncMutation.mutateAsync({
-        objectTypeName: 'Laptop',
         autoDetectAttributes: true,
         schemaName: 'Parc Informatique',
-        limit: 1000
+        limit: 10000
       });
-      setSyncResult(result);
+      
+      // On adapte le résultat pour le modal (qui attend created, updated, errors, etc.)
+      const flatResult = {
+        created: result.summary.totalCreated,
+        updated: result.summary.totalUpdated,
+        errors: result.summary.totalErrors,
+        skipped: result.summary.totalSkipped,
+        total: result.summary.totalProcessed
+      };
+      
+      setSyncResult(flatResult);
       refetch(); // Rafraîchir la liste après synchronisation
     } catch (error: any) {
       setSyncError(error);
@@ -102,11 +112,21 @@ export default function EquipmentPage() {
           <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* ... Header Content ... */}
             <div>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 mb-4 transition-colors"
+                title="Retour à l'accueil"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Retour au tableau de bord
+              </Link>
               <h1 className="text-3xl md:text-4xl font-bold text-black dark:text-zinc-50 mb-2">
-                Gestion des Équipements
+                Gestion du Parc
               </h1>
               <p className="text-zinc-600 dark:text-zinc-400">
-                Gérez les équipements et synchronisez depuis Jira Asset
+                Gérez les équipements synchronisés depuis Jira Assets
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -124,12 +144,6 @@ export default function EquipmentPage() {
                 </svg>
                 {syncMutation.isPending ? 'Synchronisation...' : 'Synchroniser Jira'}
               </button>
-              <a
-                href="/dashboard"
-                className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium transition-all duration-200 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg flex items-center gap-2"
-              >
-                🏠 Home
-              </a>
             </div>
           </div>
 
@@ -224,8 +238,18 @@ export default function EquipmentPage() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                         <span className="font-medium">Type:</span>
-                        <span>{equipment.type}</span>
+                        <span>{equipment.objectTypeName || equipment.type}</span>
                       </div>
+
+                      {/* Alerte si données manquantes */}
+                      {equipment.isMissingSerialNumber && (
+                        <div className="mt-2 flex items-center gap-2 px-2 py-1.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400">
+                          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <span className="text-[10px] font-bold uppercase tracking-tight">Série manquant</span>
+                        </div>
+                      )}
 
                       {/* Affichage du nom Jira si disponible */}
                       {equipment.jiraAttributes?.['Name'] && (

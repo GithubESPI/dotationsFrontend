@@ -5,9 +5,11 @@ import {
   JiraSchemaResponse,
   JiraObjectTypeResponse,
   SearchJiraAssetsParams,
+  SyncAllEquipmentTypesParams,
+  SyncAllEquipmentTypesResponse,
+  ObjectTypeAttribute,
   SyncLaptopsParams,
   SyncResponse,
-  ObjectTypeAttribute,
 } from '../types/jira-asset';
 
 /**
@@ -93,6 +95,19 @@ export const jiraAssetApi = {
   },
 
   /**
+   * Synchroniser tous les types d'équipements depuis Jira
+   */
+  syncAllEquipmentTypes: async (
+    params?: SyncAllEquipmentTypesParams
+  ): Promise<SyncAllEquipmentTypesResponse> => {
+    const response = await axiosInstance.post<SyncAllEquipmentTypesResponse>(
+      '/jira-asset/sync/all-equipment-types',
+      params || {}
+    );
+    return response.data;
+  },
+
+  /**
    * Synchroniser tous les équipements d'un schéma depuis Jira
    */
   syncSchema: async (
@@ -114,4 +129,3 @@ export const jiraAssetApi = {
     return response.data;
   },
 };
-

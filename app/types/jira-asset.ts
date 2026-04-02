@@ -136,6 +136,35 @@ export const SyncResponseSchema = z.object({
   total: z.number().optional(),
   attributeMapping: AttributeMappingSchema.optional(),
 });
-
 export type SyncResponse = z.infer<typeof SyncResponseSchema>;
+
+export const SyncAllEquipmentTypesParamsSchema = z.object({
+  schemaName: z.string().optional().default('Parc Informatique'),
+  limit: z.number().min(1).max(10000).optional().default(10000),
+  autoDetectAttributes: z.boolean().optional().default(true),
+});
+
+export type SyncAllEquipmentTypesParams = z.infer<typeof SyncAllEquipmentTypesParamsSchema>;
+
+export const SyncAllEquipmentTypesResponseSchema = z.object({
+  totalEquipmentTypes: z.number(),
+  results: z.array(z.object({
+    objectTypeName: z.string(),
+    equipmentType: z.string(),
+    created: z.number(),
+    updated: z.number(),
+    skipped: z.number(),
+    errors: z.number(),
+    total: z.number(),
+  })),
+  summary: z.object({
+    totalCreated: z.number(),
+    totalUpdated: z.number(),
+    totalSkipped: z.number(),
+    totalErrors: z.number(),
+    totalProcessed: z.number(),
+  }),
+});
+
+export type SyncAllEquipmentTypesResponse = z.infer<typeof SyncAllEquipmentTypesResponseSchema>;
 

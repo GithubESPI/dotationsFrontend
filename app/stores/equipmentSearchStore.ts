@@ -8,6 +8,7 @@ interface EquipmentSearchState {
   setStatus: (status: string) => void;
   setBrand: (brand: string) => void;
   setLocation: (location: string) => void;
+  setOnlyIncomplete: (onlyIncomplete: boolean) => void;
   setPage: (page: number) => void;
   setLimit: (limit: number) => void;
   reset: () => void;
@@ -44,6 +45,11 @@ export const useEquipmentSearchStore = create<EquipmentSearchState>((set) => ({
   setLocation: (location: string) =>
     set((state) => ({
       searchParams: { ...state.searchParams, location: location || undefined, page: 1 },
+    })),
+
+  setOnlyIncomplete: (onlyIncomplete: boolean) =>
+    set((state) => ({
+      searchParams: { ...state.searchParams, onlyIncomplete: onlyIncomplete || undefined, page: 1 },
     })),
 
   setPage: (page: number) =>

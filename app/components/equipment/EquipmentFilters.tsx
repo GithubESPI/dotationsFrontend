@@ -9,15 +9,21 @@ const EquipmentFilters: React.FC = () => {
     const { data: stats } = useEquipmentStats();
     const { data: allEquipment } = useEquipmentAll();
 
-    // Mapping des types pour affichage
+    // Mapping des types pour affichage (Icons + Noms Jira)
     const typeLabels: Record<string, string> = {
+        'Laptop': '💻 Laptop',
+        'Chromebook': '💻 Chromebook',
+        'Laptop étudiants': '🎓 Laptop Étudiant',
+        'Ecrans': '🖥️ Écran',
+        'Mobiles': '📱 Mobile',
+        'Tablettes': '📱 Tablette',
+        'Apple TV': '📺 Apple TV',
+        'Visio': '🎥 Visioconférence',
+        'Imprimantes': '🖨️ Imprimante',
+        'Telephone_IP': '📞 Téléphone IP',
         'PC_PORTABLE': '💻 PC Portable',
         'PC_FIXE': '🖥️ PC Fixe',
-        'TABLETTE': '📱 Tablette',
-        'MOBILE': '📱 Mobile',
-        'ECRAN': '🖥️ Écran',
-        'TELEPHONE_IP': '📞 Téléphone IP',
-        'AUTRES': '🔌 Autres',
+        'AUTRES': '🔌 Autre matériel',
     };
 
     // Extraire les localisations, statuts et types uniques
@@ -45,8 +51,11 @@ const EquipmentFilters: React.FC = () => {
                 uniqueStatuses.add(item.status);
             }
 
-            // Type
-            if (item.type) {
+            // Type - Priorité absolue au nom d'objet Jira
+            if (item.objectTypeName) {
+                uniqueTypes.add(item.objectTypeName);
+            } else if (item.type) {
+                // Fallback sur le type interne seulement si pas de nom d'objet
                 uniqueTypes.add(item.type);
             }
         });
@@ -131,6 +140,26 @@ const EquipmentFilters: React.FC = () => {
                             </svg>
                         </div>
                     </div>
+                </div>
+
+
+                {/* Incomplete Assets Filter */}
+                <div className="md:col-span-1 flex items-end pb-1.5">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                        <div className="relative">
+                            <input
+                                type="checkbox"
+                                checked={searchParams.onlyIncomplete || false}
+                                onChange={(e) => useEquipmentSearchStore.getState().setOnlyIncomplete(e.target.checked)}
+                                className="sr-only"
+                            />
+                            <div className={`w-10 h-5 rounded-full transition-colors duration-200 ease-in-out ${searchParams.onlyIncomplete ? 'bg-amber-500' : 'bg-zinc-300 dark:bg-zinc-700'}`}></div>
+                            <div className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200 ease-in-out ${searchParams.onlyIncomplete ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                        </div>
+                        <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors uppercase">
+                            ⚠️ Données manquantes
+                        </span>
+                    </label>
                 </div>
 
                 {/* Status Filter */}

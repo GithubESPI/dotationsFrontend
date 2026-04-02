@@ -4,10 +4,35 @@ import { jiraAssetApi } from '../api/jira-asset';
 import {
   JiraAssetObject,
   SearchJiraAssetsParams,
+  SyncAllEquipmentTypesParams,
   SyncLaptopsParams,
   SyncResponse,
 } from '../types/jira-asset';
 import { useJiraAssetStore } from '../stores/jiraAssetStore';
+
+// ... existing hooks ...
+
+/**
+ * Hook pour synchroniser tous les types d'équipements depuis Jira
+ */
+export const useSyncAllEquipmentTypes = () => {
+  const queryClient = useQueryClient();
+  const { setError } = useJiraAssetStore();
+
+  return useMutation({
+    mutationFn: (params?: SyncAllEquipmentTypesParams) => jiraAssetApi.syncAllEquipmentTypes(params),
+    onSuccess: () => {
+      // Invalider les caches pertinents
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['jira-asset'] });
+
+      setError(null);
+    },
+    onError: (error: any) => {
+      setError(error.message || 'Erreur lors de la synchronisation complète');
+    },
+  });
+};
 
 /**
  * Hook pour obtenir l'ID du workspace Jira Asset
