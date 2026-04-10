@@ -7,6 +7,7 @@ import { useEquipmentSearch } from '../hooks/useEquipment';
 import { useEquipmentSearchStore } from '../stores/equipmentSearchStore';
 import EquipmentFormModal from '../components/equipment/EquipmentFormModal';
 import EquipmentFilters from '../components/equipment/EquipmentFilters';
+import ExportMenu from '../components/equipment/ExportMenu';
 
 import { Equipment } from '../types/equipment';
 import { useSyncAllEquipmentTypes } from '../hooks/useJiraAsset';
@@ -130,6 +131,7 @@ export default function EquipmentPage() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
+              <ExportMenu />
               <button
                 onClick={handleSync}
                 disabled={syncMutation.isPending}

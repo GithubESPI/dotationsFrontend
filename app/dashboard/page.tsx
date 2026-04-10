@@ -15,6 +15,7 @@ import SyncResultModal from '../components/equipment/SyncResultModal';
 import { SyncResponse } from '../types/jira-asset';
 import { useAllocationsSearch } from '../hooks/useAllocations';
 import { Activity } from '../components/dashboard/ActivityFeed';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -265,6 +266,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <ThemeSwitcher />
               <button
                 onClick={handleSync}
                 disabled={syncMutation.isPending}
