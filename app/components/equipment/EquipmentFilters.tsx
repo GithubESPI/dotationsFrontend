@@ -86,7 +86,8 @@ const EquipmentFilters: React.FC = () => {
     const hasActiveFilters =
         searchParams.query ||
         searchParams.status ||
-        searchParams.location;
+        searchParams.location ||
+        searchParams.onlyIncomplete;
 
     return (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm mb-6">
@@ -231,7 +232,7 @@ const EquipmentFilters: React.FC = () => {
 
             </div>
 
-            {/* Active Filters Summary (Optional visual enhancement) */}
+            {/* Active Filters Summary */}
             <div className="flex gap-2 mt-3 flex-wrap">
                 {searchParams.type && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300">
@@ -246,6 +247,11 @@ const EquipmentFilters: React.FC = () => {
                 {searchParams.location && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
                         Lieu: {searchParams.location}
+                    </span>
+                )}
+                {searchParams.onlyIncomplete && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
+                        ⚠️ Données manquantes uniquement
                     </span>
                 )}
             </div>

@@ -188,31 +188,48 @@ export default function EquipmentPage() {
               {/* Liste des équipements */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {data.data.map((equipment) => (
-                  <div
+              <div
                     key={equipment._id}
-                    className="p-6 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:shadow-lg transition-all cursor-pointer"
+                    className={`p-6 rounded-xl border hover:shadow-lg transition-all cursor-pointer ${
+                      equipment.isMissingSerialNumber
+                        ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/50'
+                        : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                    }`}
                     onClick={() => handleEditEquipment(equipment)}
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-black dark:text-zinc-50">
-                          {equipment.jiraAttributes?.['Name'] || getEquipmentDisplayName(equipment)}
-                        </h3>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold text-black dark:text-zinc-50 truncate">
+                            {equipment.jiraAttributes?.['Name'] || getEquipmentDisplayName(equipment)}
+                          </h3>
+                          {/* Badge "Info incomplète" si N° de série manquant */}
+                          {equipment.isMissingSerialNumber && (
+                            <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
+                              ⚠️ Incomplet
+                            </span>
+                          )}
+                        </div>
                         {equipment.jiraAttributes?.['Name'] && (
                           <p className="text-sm text-zinc-500 dark:text-zinc-400">
                             {getEquipmentDisplayName(equipment)}
                           </p>
                         )}
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">
-                          {equipment.serialNumber}
-                        </p>
+                        {/* Numéro de série : afficher uniquement si réel (pas fallback) */}
+                        {equipment.isMissingSerialNumber ? (
+                          <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-0.5">
+                            N° série manquant dans Jira
+                          </p>
+                        ) : (
+                          <p className="text-sm text-zinc-500 dark:text-zinc-400 font-mono">
+                            {equipment.serialNumber}
+                          </p>
+                        )}
                       </div>
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${(() => {
-                          // Récupérer le statut réel (Jira ou fallback)
+                        className={`ml-2 shrink-0 px-2 py-1 text-xs font-medium rounded-full ${(() => {
                           const rawStatus = equipment.jiraAttributes?.['Status'] || equipment.status || '';
                           const status = String(rawStatus).toUpperCase();
-
                           if (status === 'EN_STOCK' || status === 'EN STOCK') return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
                           if (status.includes('AFFECT') || status === 'ASSIGNED') return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
                           if (status.includes('REPARATION') || status.includes('BROKEN')) return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300';
@@ -222,7 +239,6 @@ export default function EquipmentPage() {
                       >
                         {(() => {
                           const originalStatus = equipment.jiraAttributes?.['Status'] || equipment.status?.toUpperCase();
-                          // Si c'est un PC_PORTABLE, Laptop ou Chromebook, on affiche "En stock" au lieu de "Disponible"
                           if (
                             originalStatus === 'DISPONIBLE' &&
                             (equipment.type === 'PC_PORTABLE' || 
@@ -241,20 +257,10 @@ export default function EquipmentPage() {
                         <span>{equipment.objectTypeName || equipment.type}</span>
                       </div>
 
-                      {/* Alerte si données manquantes */}
-                      {equipment.isMissingSerialNumber && (
-                        <div className="mt-2 flex items-center gap-2 px-2 py-1.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400">
-                          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                          </svg>
-                          <span className="text-[10px] font-bold uppercase tracking-tight">Série manquant</span>
-                        </div>
-                      )}
-
                       {/* Affichage du nom Jira si disponible */}
                       {equipment.jiraAttributes?.['Name'] && (
                         <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                          <span className="font-medium">Nom:</span>
+                          <span className="font-medium">Nom Jira:</span>
                           <span>{equipment.jiraAttributes['Name']}</span>
                         </div>
                       )}
@@ -267,7 +273,7 @@ export default function EquipmentPage() {
                             {equipment.jiraAttributes?.['Utilisateur'] ||
                               equipment.jiraAttributes?.['User'] ||
                               equipment.jiraAttributes?.['user'] ||
-                              equipment.currentUserId ||
+                              (equipment.currentUserId as any)?.displayName ||
                               'Non spécifié'}
                           </span>
                         </div>
@@ -277,9 +283,7 @@ export default function EquipmentPage() {
                       {(equipment.location || equipment.jiraAttributes?.['Localisation']) && (
                         <div className="flex items-center gap-2 text-sm text-purple-600 dark:text-purple-400">
                           <span className="font-medium">Lieu:</span>
-                          <span>
-                            {equipment.jiraAttributes?.['Localisation'] || equipment.location}
-                          </span>
+                          <span>{equipment.jiraAttributes?.['Localisation'] || equipment.location}</span>
                         </div>
                       )}
 
