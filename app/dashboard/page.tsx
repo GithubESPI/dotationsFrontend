@@ -17,6 +17,10 @@ import { useAllocationsSearch } from '../hooks/useAllocations';
 import { Activity } from '../components/dashboard/ActivityFeed';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 
+// Import des modals pour la dotation
+import EmployeeSelectionModal from '../components/dashboard/EmployeeSelectionModal';
+import AllocationFormModal from '../components/allocations/AllocationFormModal';
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user: authUser, logout, isLoading: authLoading } = useAuth();
@@ -29,6 +33,9 @@ export default function DashboardPage() {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResponse | null>(null);
   const [syncError, setSyncError] = useState<Error | null>(null);
+
+  // État pour le parcours de dotation rapide
+  const [isEmployeeSelectionOpen, setIsEmployeeSelectionOpen] = useState(false);
 
   // Activité récente depuis les allocations
   const { data: allocationsData, isLoading: allocationsLoading } = useAllocationsSearch({ page: 1, limit: 5 });
@@ -123,8 +130,7 @@ export default function DashboardPage() {
         </svg>
       ),
       onClick: () => {
-        // TODO: Implémenter la navigation vers la création de dotation
-        console.log('Nouvelle dotation');
+        setIsEmployeeSelectionOpen(true);
       },
       color: 'from-green-500 to-emerald-500',
     },
@@ -343,6 +349,12 @@ export default function DashboardPage() {
             error={syncError}
             isLoading={syncMutation.isPending}
           />
+          {/* Modals de Dotation */}
+          <EmployeeSelectionModal 
+            isOpen={isEmployeeSelectionOpen} 
+            onClose={() => setIsEmployeeSelectionOpen(false)} 
+          />
+          <AllocationFormModal />
         </div>
       </div>
     </ProtectedRoute>
