@@ -236,6 +236,7 @@ export default function EquipmentPage() {
                           if (status.includes('AFFECT') || status === 'ASSIGNED') return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
                           if (status.includes('REPARATION') || status.includes('BROKEN')) return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300';
                           if (status.includes('LOST') || status === 'PERDU') return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300';
+                          if (status === 'RESTITUE') return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300';
                           return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300';
                         })()}`}
                       >

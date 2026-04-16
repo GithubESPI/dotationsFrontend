@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateEquipmentSchema, EquipmentTypeSchema, EquipmentStatusSchema } from '../../types/equipment';
-import { useCreateEquipment, useUpdateEquipment, useEquipment } from '../../hooks/useEquipment';
+import { useCreateEquipment, useUpdateEquipment, useEquipment, useMarkAsInStock } from '../../hooks/useEquipment';
 import Modal from '../ui/Modal';
 import JiraAssetSelector from './JiraAssetSelector';
 import { JiraAssetObject, ObjectTypeAttribute } from '../../types/jira-asset';
@@ -48,6 +48,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
     equipmentId || undefined
   );
   const [selectedJiraAsset, setSelectedJiraAsset] = useState<JiraAssetObject | null>(null);
+  const markAsInStock = useMarkAsInStock();
   const [isLoadingMapping, setIsLoadingMapping] = useState(false);
 
   const {
@@ -347,6 +348,25 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
           </div>
 
           <div className="flex justify-end pt-4 border-t border-zinc-200 dark:border-zinc-700">
+            {existingEquipment.status === 'restitue' && (
+              <button
+                onClick={async () => {
+                  if (confirm('Voulez-vous remettre cet équipement en stock ?')) {
+                    try {
+                      await markAsInStock.mutateAsync(existingEquipment._id);
+                      onSuccess?.();
+                      onClose();
+                    } catch (e) {
+                      console.error("Erreur remise en stock", e);
+                    }
+                  }
+                }}
+                disabled={markAsInStock.isPending}
+                className="px-6 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {markAsInStock.isPending ? 'Traitement...' : '✅ Remettre en stock'}
+              </button>
+            )}
             <button
               onClick={onClose}
               className="px-6 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-700 text-white hover:bg-zinc-800 dark:hover:bg-zinc-600 transition-colors font-medium"

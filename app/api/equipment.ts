@@ -101,5 +101,12 @@ export const equipmentApi = {
   remove: async (id: string): Promise<void> => {
     await axiosInstance.delete(`/equipment/${id}`);
   },
+  /**
+   * Remettre un équipement en stock
+   */
+  markAsInStock: async (id: string): Promise<Equipment> => {
+    const response = await axiosInstance.post<Equipment>(`/equipment/${id}/in-stock`);
+    return response.data;
+  },
 };
 

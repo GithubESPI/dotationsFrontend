@@ -215,3 +215,18 @@ export const useRemoveEquipment = () => {
   });
 };
 
+/**
+ * Hook pour remettre un équipement en stock
+ */
+export const useMarkAsInStock = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => equipmentApi.markAsInStock(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment', id] });
+    },
+  });
+};
+
