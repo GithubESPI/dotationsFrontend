@@ -197,15 +197,15 @@ export default function DashboardPage() {
     let title = 'Nouvelle dotation';
     let description = `Demande initiale pour ${alloc.userName}`;
 
-    if (alloc.status === 'TERMINEE') {
+    if (alloc.status === 'terminee') {
       type = 'success';
       title = 'Dotation terminée';
       description = `Le matériel a été remis à ${alloc.userName} le ${new Date(alloc.deliveryDate || alloc.updatedAt || alloc.createdAt!).toLocaleDateString('fr-FR')}`;
-    } else if (alloc.status === 'ANNULEE') {
+    } else if (alloc.status === 'annulee') {
       type = 'error';
       title = 'Dotation annulée';
       description = `La demande de ${alloc.userName} a été annulée.`;
-    } else if (alloc.status === 'EN_RETARD') {
+    } else if (alloc.status === 'en_retard') {
       type = 'warning';
       title = 'Action requise';
       description = `La dotation de ${alloc.userName} est en attente ou en retard.`;

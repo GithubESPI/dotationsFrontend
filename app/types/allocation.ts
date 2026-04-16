@@ -3,10 +3,10 @@ import { EquipmentTypeSchema } from './equipment';
 
 // Enum pour le statut d'allocation
 export const AllocationStatusSchema = z.enum([
-  'EN_COURS',
-  'TERMINEE',
-  'EN_RETARD',
-  'ANNULEE',
+  'en_cours',
+  'terminee',
+  'en_retard',
+  'annulee',
 ]);
 
 export type AllocationStatus = z.infer<typeof AllocationStatusSchema>;

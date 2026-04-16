@@ -40,7 +40,7 @@ const LocalEquipmentSearch: React.FC<LocalEquipmentSearchProps> = ({
 
         const ids = new Set<string>();
         allAllocations.forEach(allocation => {
-            if (allocation.status === 'EN_COURS' || allocation.status === 'EN_RETARD') {
+            if (allocation.status === 'en_cours' || allocation.status === 'en_retard') {
                 allocation.equipments.forEach(eq => {
                     if (typeof eq.equipmentId === 'string') {
                         ids.add(eq.equipmentId);

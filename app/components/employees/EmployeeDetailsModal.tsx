@@ -364,14 +364,15 @@ const EmployeeDetailsModal: React.FC<EmployeeDetailsModalProps> = ({
                       <h4 className="font-semibold text-lg text-black dark:text-white">
                         Allocation du {formatDate(allocation.deliveryDate)}
                       </h4>
-                      <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${['EN_COURS', 'en_cours'].includes(allocation.status) ? 'bg-green-100 text-green-800' :
-                        ['TERMINEE', 'terminee'].includes(allocation.status) ? 'bg-gray-100 text-gray-800' :
-                          'bg-yellow-100 text-yellow-800'
-                        }`}>
+                      <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
+                        ['en_cours'].includes(allocation.status) ? 'bg-green-100 text-green-800' :
+                        ['terminee'].includes(allocation.status) ? 'bg-gray-100 text-gray-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
                         {allocation.status === 'en_cours' ? 'En cours' : allocation.status === 'terminee' ? 'Terminée' : allocation.status}
                       </span>
                     </div>
-                    {(['EN_COURS', 'en_cours', 'EN_RETARD', 'en_retard'].includes(allocation.status)) && (
+                    {['en_cours', 'en_retard'].includes(allocation.status) && (
                       <button
                         onClick={() => setSelectedAllocation(allocation)}
                         className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"

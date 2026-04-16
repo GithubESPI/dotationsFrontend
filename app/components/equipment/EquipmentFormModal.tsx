@@ -28,12 +28,12 @@ const equipmentTypeLabels: Record<string, string> = {
 };
 
 const equipmentStatusLabels: Record<string, string> = {
-  EN_STOCK: 'En stock',
-  AFFECTE: 'Affecté',
-  EN_REPARATION: 'En réparation/intervention',
-  RESTITUE: 'Restitué',
-  PERDU: 'Perdu',
-  DETRUIT: 'Détruit/Rebut',
+  en_stock: 'En stock',
+  affecte: 'Affecté',
+  en_reparation: 'En réparation/intervention',
+  restitue: 'Restitué',
+  perdu: 'Perdu',
+  detruit: 'Détruit/Rebut',
 };
 
 const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
@@ -68,7 +68,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
       serialNumber: '',
       imei: '',
       phoneLine: '',
-      status: 'EN_STOCK' as const,
+      status: 'en_stock' as const,
       currentUserId: '',
       location: '',
       additionalSoftwares: [],
@@ -125,7 +125,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
         serialNumber: '',
         imei: '',
         phoneLine: '',
-        status: 'EN_STOCK',
+        status: 'en_stock',
         currentUserId: '',
         location: '',
         additionalSoftwares: [],
@@ -152,16 +152,16 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
 
   // Mapper le statut depuis Jira vers notre enum
   const mapJiraStatusToEquipmentStatus = (jiraStatus?: string): string => {
-    if (!jiraStatus) return 'EN_STOCK';
+    if (!jiraStatus) return 'en_stock';
 
     const lowerStatus = jiraStatus.toLowerCase();
-    if (lowerStatus.includes('en stock') || lowerStatus.includes('disponible') || lowerStatus.includes('available')) return 'EN_STOCK';
-    if (lowerStatus.includes('affecté') || lowerStatus.includes('affecte') || lowerStatus.includes('assigned')) return 'AFFECTE';
-    if (lowerStatus.includes('intervention') || lowerStatus.includes('réparation') || lowerStatus.includes('repair') || lowerStatus.includes('maintenance')) return 'EN_REPARATION';
-    if (lowerStatus.includes('restitue') || lowerStatus.includes('returned')) return 'RESTITUE';
-    if (lowerStatus.includes('perdu') || lowerStatus.includes('lost')) return 'PERDU';
-    if (lowerStatus.includes('rebut') || lowerStatus.includes('détruit') || lowerStatus.includes('destroyed')) return 'DETRUIT';
-    return 'EN_STOCK';
+    if (lowerStatus.includes('en stock') || lowerStatus.includes('disponible') || lowerStatus.includes('available')) return 'en_stock';
+    if (lowerStatus.includes('affecté') || lowerStatus.includes('affecte') || lowerStatus.includes('assigned')) return 'affecte';
+    if (lowerStatus.includes('intervention') || lowerStatus.includes('réparation') || lowerStatus.includes('repair') || lowerStatus.includes('maintenance')) return 'en_reparation';
+    if (lowerStatus.includes('restitue') || lowerStatus.includes('returned')) return 'restitue';
+    if (lowerStatus.includes('perdu') || lowerStatus.includes('lost')) return 'perdu';
+    if (lowerStatus.includes('rebut') || lowerStatus.includes('détruit') || lowerStatus.includes('destroyed')) return 'detruit';
+    return 'en_stock';
   };
 
   const handleJiraAssetSelect = async (asset: JiraAssetObject, formData: any) => {
@@ -290,8 +290,8 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">STATUT</span>
                 <span className={`text-sm font-medium px-2 py-0.5 rounded-full w-fit ${
-                    existingEquipment.status === 'EN_STOCK' ? 'bg-green-100 text-green-800' :
-                    existingEquipment.status?.includes('AFFECT') ? 'bg-blue-100 text-blue-800' :
+                    existingEquipment.status === 'en_stock' ? 'bg-green-100 text-green-800' :
+                    existingEquipment.status?.includes('affect') ? 'bg-blue-100 text-blue-800' :
                       'bg-zinc-100 text-zinc-800'
                   }`}>
                   {(() => {

@@ -25,7 +25,7 @@ const EmployeeSelectionModal: React.FC<EmployeeSelectionModalProps> = ({ isOpen,
 
   // Récupérer les allocations actives pour signaler les dotations en cours
   const { data: activeAllocationsData } = useAllocationsSearch({
-    status: 'EN_COURS',
+    status: 'en_cours',
     limit: 100,
     page: 1,
   });
