@@ -69,8 +69,9 @@ const LocalEquipmentSearch: React.FC<LocalEquipmentSearchProps> = ({
                 const eqType = eq.type.toUpperCase();
                 const filter = typeFilter.toUpperCase();
 
-                // Correspondance exacte
+                // Correspondance exacte (Interne ou Jira)
                 if (eqType === filter) return true;
+                if (eq.objectTypeName?.toUpperCase() === filter) return true;
 
                 // Correspondance mappée (si le DB a "ecran" et le filtre est "ECRAN")
                 if (filter === 'ECRAN' && (eqType === 'MONITOR' || eqType.includes('ECRAN'))) return true;

@@ -49,9 +49,11 @@ export const useEquipmentSearch = (params: SearchEquipmentParams) => {
         });
       }
 
-      // 4. Filtrage par Type
       if (params.type) {
-        filtered = filtered.filter(item => item.type === params.type);
+        filtered = filtered.filter(item => 
+          item.type === params.type || 
+          item.objectTypeName === params.type
+        );
       }
 
       // 5. Filtrage par Marque (si utilisé spécifiquement)

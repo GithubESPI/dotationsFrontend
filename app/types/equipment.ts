@@ -52,7 +52,7 @@ export type Equipment = z.infer<typeof EquipmentSchema>;
 // Schéma pour la recherche d'équipements
 export const SearchEquipmentParamsSchema = z.object({
   query: z.string().optional(),
-  type: EquipmentTypeSchema.optional(),
+  type: z.string().optional(),
   status: EquipmentStatusSchema.optional(),
   brand: z.string().optional(),
   location: z.string().optional(),
